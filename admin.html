@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HODD · Admin Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet" />
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #edf2eb; --surface: #e2ebe0; --surface2: #d5e0d2;
+      --border: rgba(60,90,55,.12); --border2: rgba(60,90,55,.22);
+      --accent: #b07828; --text: #1e1208; --muted: #7a6a58; --muted2: #5a4e3c;
+      --success: #3a8a50; --danger: #dc2626; --radius: 14px; --radius-sm: 8px;
+    }
+    body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+    /* ── Top bar ── */
+    .topbar { display:flex; align-items:center; gap:1rem; padding:1rem 2rem; background:rgba(237,242,235,.95); border-bottom:1px solid var(--border); position:sticky; top:0; backdrop-filter:blur(16px); z-index:100; }
+    .logo { font-family:'Playfair Display',serif; font-size:1.3rem; font-weight:700; }
+    .logo span { color:var(--accent); }
+    .admin-badge { background:rgba(176,120,40,.15); color:#7a4a10; font-size:.68rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; padding:.25rem .7rem; border-radius:100px; border:1px solid rgba(176,120,40,.3); }
+    .topbar-right { margin-left:auto; display:flex; align-items:center; gap:.75rem; font-size:.82rem; color:var(--muted); }
+    #topbarUser { font-weight:600; color:var(--text); }
+    .btn-sm { background:none; border:1px solid var(--border2); color:var(--muted2); font-size:.75rem; font-weight:600; padding:.3rem .75rem; border-radius:100px; cursor:pointer; transition:.2s; }
+    .btn-sm:hover { border-color:var(--accent); color:var(--accent); }
+
+    /* ── Layout ── */
+    .container { max-width:1100px; margin:0 auto; padding:2rem 2rem 4rem; }
+    h1 { font-family:'Playfair Display',serif; font-size:1.8rem; font-weight:700; margin-bottom:.3rem; }
+    .page-sub { color:var(--muted); font-size:.88rem; margin-bottom:2rem; }
+
+    /* ── Auth wall ── */
+    #authWall { max-width:420px; margin:4rem auto; text-align:center; padding:2rem; background:var(--surface); border:1px solid var(--border2); border-radius:var(--radius); }
+    #authWall h2 { font-family:'Playfair Display',serif; font-size:1.5rem; margin-bottom:.5rem; }
+    #authWall p { color:var(--muted); font-size:.84rem; margin-bottom:1.5rem; }
+    .input-field { width:100%; background:var(--surface2); border:1px solid var(--border2); color:var(--text); font-size:.88rem; padding:.65rem .9rem; border-radius:var(--radius-sm); outline:none; font-family:inherit; margin-bottom:.65rem; }
+    .btn-primary { display:inline-flex; align-items:center; gap:.5rem; background:linear-gradient(135deg,#c9923a,#b07828); color:#fff; font-size:.92rem; font-weight:600; padding:.75rem 1.8rem; border:none; border-radius:100px; cursor:pointer; width:100%; justify-content:center; }
+    #authError { color:#dc2626; font-size:.78rem; margin-bottom:.65rem; min-height:1rem; }
+
+    /* ── Stat cards ── */
+    .stats-row { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:1rem; margin-bottom:2.5rem; }
+    .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1.25rem 1.5rem; }
+    .stat-label { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); margin-bottom:.4rem; }
+    .stat-val { font-size:2rem; font-weight:700; color:var(--accent); font-family:'Playfair Display',serif; }
+    .stat-sub { font-size:.72rem; color:var(--muted); margin-top:.2rem; }
+
+    /* ── Table ── */
+    .section-title { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); margin-bottom:.75rem; }
+    .table-wrap { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:.83rem; min-width:600px; }
+    th { background:var(--surface2); color:var(--muted); font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; padding:.7rem 1rem; text-align:left; border-bottom:1px solid var(--border2); white-space:nowrap; }
+    td { padding:.75rem 1rem; border-bottom:1px solid var(--border); color:var(--text); vertical-align:middle; }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:rgba(176,120,40,.03); }
+    .tag-anon { background:rgba(120,120,120,.12); color:var(--muted); font-size:.65rem; font-weight:600; padding:.2rem .5rem; border-radius:100px; }
+    .tag-real { background:rgba(58,138,80,.12); color:var(--success); font-size:.65rem; font-weight:600; padding:.2rem .5rem; border-radius:100px; }
+
+    /* ── Loading / empty ── */
+    .loading { text-align:center; padding:3rem; color:var(--muted); }
+    .spinner { width:36px; height:36px; border:3px solid var(--surface2); border-top-color:var(--accent); border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 1rem; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .empty-state { text-align:center; padding:3rem; color:var(--muted); font-size:.9rem; }
+    .refresh-btn { background:var(--surface2); border:1px solid var(--border2); color:var(--muted2); font-size:.78rem; font-weight:600; padding:.4rem 1rem; border-radius:100px; cursor:pointer; margin-left:auto; display:block; margin-bottom:.75rem; }
+    .refresh-btn:hover { border-color:var(--accent); color:var(--accent); }
+    @media(max-width:600px){ .container { padding:1.5rem 1rem 3rem; } .stats-row { grid-template-columns:repeat(2,1fr); } }
+  </style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div class="logo">HODD<span>.</span></div>
+  <div class="admin-badge">Admin Dashboard</div>
+  <div class="topbar-right">
+    <span id="topbarUser">Not signed in</span>
+    <button class="btn-sm" id="signOutBtn" onclick="adminSignOut()" style="display:none">Sign Out</button>
+    <a href="index.html" class="btn-sm">← Back to App</a>
+  </div>
+</div>
+
+<!-- Auth wall (shown when not signed in) -->
+<div id="authWall">
+  <h2>Admin Sign In</h2>
+  <p>Sign in with your admin account to view user and design data.</p>
+  <div id="authError"></div>
+  <input class="input-field" id="adminEmail" type="email" placeholder="Admin email" />
+  <input class="input-field" id="adminPass"  type="password" placeholder="Password" />
+  <button class="btn-primary" onclick="adminSignIn()">Sign In →</button>
+</div>
+
+<!-- Dashboard (hidden until signed in) -->
+<div id="dashboard" style="display:none">
+  <div class="container">
+    <h1>Dashboard</h1>
+    <p class="page-sub" id="lastRefresh">Loading data…</p>
+
+    <!-- Stats row -->
+    <div class="stats-row" id="statsRow">
+      <div class="stat-card"><div class="stat-label">Total Users</div><div class="stat-val" id="statUsers">—</div><div class="stat-sub">Incl. anonymous</div></div>
+      <div class="stat-card"><div class="stat-label">Real Accounts</div><div class="stat-val" id="statReal">—</div><div class="stat-sub">Email + Google</div></div>
+      <div class="stat-card"><div class="stat-label">Anonymous</div><div class="stat-val" id="statAnon">—</div><div class="stat-sub">Silent tracking</div></div>
+      <div class="stat-card"><div class="stat-label">Cities</div><div class="stat-val" id="statCities">—</div><div class="stat-sub">Unique cities</div></div>
+    </div>
+
+    <!-- Users table -->
+    <div style="display:flex;align-items:center;margin-bottom:.75rem;">
+      <div class="section-title">All Users</div>
+      <button class="refresh-btn" onclick="loadDashboard()">↻ Refresh</button>
+    </div>
+    <div class="table-wrap">
+      <div id="usersTableWrap">
+        <div class="loading"><div class="spinner"></div>Loading users…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey:            "AIzaSyCBTPvcIiu9r3fvwph_K-xdCWmrRZVtn3g",
+  authDomain:        "hodd-7f6de.firebaseapp.com",
+  projectId:         "hodd-7f6de",
+  storageBucket:     "hodd-7f6de.firebasestorage.app",
+  messagingSenderId: "151430626519",
+  appId:             "1:151430626519:web:fa7cc9e84bc3ae837f4492",
+};
+
+let db, auth;
+
+firebase.initializeApp(firebaseConfig);
+db   = firebase.firestore();
+db.settings({ experimentalForceLongPolling: true, merge: true });
+auth = firebase.auth();
+
+auth.onAuthStateChanged(user => {
+  if (user) {
+    document.getElementById('authWall').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    document.getElementById('topbarUser').textContent = user.email || user.displayName || 'Admin';
+    document.getElementById('signOutBtn').style.display = 'block';
+    loadDashboard();
+  } else {
+    document.getElementById('authWall').style.display = 'block';
+    document.getElementById('dashboard').style.display = 'none';
+    document.getElementById('topbarUser').textContent = 'Not signed in';
+    document.getElementById('signOutBtn').style.display = 'none';
+  }
+});
+
+async function adminSignIn() {
+  const email = document.getElementById('adminEmail').value.trim();
+  const pass  = document.getElementById('adminPass').value;
+  document.getElementById('authError').textContent = '';
+  if (!email || !pass) { showErr('Enter email and password.'); return; }
+  try {
+    await auth.signInWithEmailAndPassword(email, pass);
+  } catch(e) {
+    const msgs = {
+      'auth/wrong-password':  'Incorrect password.',
+      'auth/user-not-found':  'No account found.',
+      'auth/invalid-email':   'Invalid email.',
+    };
+    showErr(msgs[e.code] || e.message);
+  }
+}
+
+function showErr(msg) {
+  document.getElementById('authError').textContent = msg;
+}
+
+function adminSignOut() {
+  auth.signOut();
+}
+
+async function loadDashboard() {
+  document.getElementById('usersTableWrap').innerHTML = '<div class="loading"><div class="spinner"></div>Loading users…</div>';
+
+  try {
+    // Simple get — no orderBy (avoids needing Firestore index)
+    const snap = await db.collection('users').limit(200).get();
+    const users = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+
+    // Sort locally by updatedAt descending
+    users.sort((a, b) => {
+      const ta = a.updatedAt?.toDate ? a.updatedAt.toDate().getTime() : 0;
+      const tb = b.updatedAt?.toDate ? b.updatedAt.toDate().getTime() : 0;
+      return tb - ta;
+    });
+
+    // Stats
+    const real   = users.filter(u => !u.isAnonymous);
+    const anon   = users.filter(u => u.isAnonymous);
+    const cities = [...new Set(users.map(u => u.city).filter(c => c && c.trim()))];
+
+    document.getElementById('statUsers').textContent  = users.length;
+    document.getElementById('statReal').textContent   = real.length;
+    document.getElementById('statAnon').textContent   = anon.length;
+    document.getElementById('statCities').textContent = cities.length;
+    document.getElementById('lastRefresh').textContent =
+      `Last refreshed: ${new Date().toLocaleTimeString('en-IN')} · ${users.length} users found`;
+
+    // Table
+    if (users.length === 0) {
+      document.getElementById('usersTableWrap').innerHTML = '<div class="empty-state">No users yet. They will appear here once people visit HODD.</div>';
+      return;
+    }
+
+    const rows = users.map(u => {
+      const ts = u.updatedAt?.toDate ? u.updatedAt.toDate().toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+      const type = u.isAnonymous
+        ? '<span class="tag-anon">Anonymous</span>'
+        : '<span class="tag-real">Real User</span>';
+      return `<tr>
+        <td>${type}</td>
+        <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.email || '<span style="color:var(--muted)">—</span>'}</td>
+        <td>${u.displayName || '<span style="color:var(--muted)">—</span>'}</td>
+        <td>${u.city || '<span style="color:var(--muted)">—</span>'}</td>
+        <td style="font-size:.76rem;color:var(--muted)">${ts}</td>
+        <td style="font-size:.72rem;color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis">${u.uid}</td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('usersTableWrap').innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Type</th><th>Email</th><th>Name</th><th>City</th><th>Last Seen</th><th>UID</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+
+  } catch(e) {
+    console.error('Admin load error:', e);
+    let hint = '';
+    if (e.code === 'permission-denied' || e.message.includes('Missing or insufficient permissions')) {
+      hint = `<br><br><strong>Fix:</strong> Your Firestore rules are blocking admin access.<br>
+      Go to <a href="https://console.firebase.google.com/project/hodd-7f6de/firestore/rules" target="_blank" style="color:var(--accent)">Firebase Console → Firestore → Rules</a>
+      and add this rule inside your <code>match /databases/{database}/documents</code> block:<br><br>
+      <code style="background:var(--surface2);padding:.4rem .75rem;border-radius:6px;display:block;margin-top:.5rem;font-size:.78rem">
+      match /users/{userId} {<br>
+      &nbsp;&nbsp;allow read: if request.auth != null;<br>
+      }
+      </code>`;
+    }
+    document.getElementById('usersTableWrap').innerHTML =
+      `<div class="empty-state" style="text-align:left;padding:2rem">
+        <strong style="color:var(--danger)">Error: ${e.message}</strong>${hint}
+      </div>`;
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HODD — AI Interior Design</title>
+  <link rel="stylesheet" href="style.css?v=12" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <!-- ── Google Analytics 4 ── -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6CWM9WWR82"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6CWM9WWR82');
+  </script>
+
+  <!-- ── Firebase 9 compat SDK (CDN — no npm needed) ── -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════
+     LANDING
+══════════════════════════════════════════════════════════════ -->
+<section id="landing" class="screen active">
+  <nav class="nav">
+    <div class="logo">HODD<span class="logo-dot">.</span></div>
+    <div class="nav-tagline">AI Interior Design</div>
+    <div class="nav-right" id="navRight">
+      <!-- Populated by firebase.js updateAuthUI() -->
+      <button class="nav-badge" onclick="openAuthModal('signin')" style="cursor:pointer">Sign In</button>
+      <button class="btn-auth-cta" onclick="openAuthModal('signup')">Sign Up Free</button>
+    </div>
+  </nav>
+
+  <div class="hero">
+    <div class="hero-badge">✦ Powered by AI · Designed for Indian Homes</div>
+    <h1 class="hero-title">Your dream room,<br /><em>designed in minutes.</em></h1>
+    <p class="hero-sub">From a phone photo to 5 photorealistic renders — HODD handles inspiration, visualization, execution planning, and procurement in one guided flow.</p>
+    <button class="btn-primary hero-cta" onclick="startFlow()">
+      Start Designing Free
+      <span class="btn-arrow">→</span>
+    </button>
+    <div class="hero-social-proof">
+      <div class="avatars">
+        <div class="av" style="background:#c084fc"></div>
+        <div class="av" style="background:#fb923c"></div>
+        <div class="av" style="background:#34d399"></div>
+        <div class="av" style="background:#60a5fa"></div>
+      </div>
+      <span>14,200+ rooms designed this month</span>
+    </div>
+  </div>
+
+  <div class="flow-preview">
+    <div class="flow-step-pill active-pill">1 · Input</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step-pill">2 · Design</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step-pill">3 · Decide</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step-pill">4 · Execute</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step-pill">5 · Shop</div>
+  </div>
+
+  <div class="sample-rooms">
+    <div class="room-card" data-style="japandi" onclick="quickStart(this)">
+      <div class="room-img" data-scene="japandi"></div>
+      <div class="room-label-wrap">
+        <div class="room-label">Japandi Minimalism</div>
+        <div class="room-label-tag">Calm · Wabi-sabi</div>
+      </div>
+    </div>
+    <div class="room-card" data-style="indian-modern" onclick="quickStart(this)">
+      <div class="room-img" data-scene="indian-modern"></div>
+      <div class="room-label-wrap">
+        <div class="room-label">Indian Modern</div>
+        <div class="room-label-tag">Teak · Brass · Heritage</div>
+      </div>
+    </div>
+    <div class="room-card" data-style="contemporary" onclick="quickStart(this)">
+      <div class="room-img" data-scene="contemporary"></div>
+      <div class="room-label-wrap">
+        <div class="room-label">Coastal Contemporary</div>
+        <div class="room-label-tag">Bold · Curated · Fresh</div>
+      </div>
+    </div>
+    <div class="room-card" data-style="luxury-modern" onclick="quickStart(this)">
+      <div class="room-img" data-scene="luxury-modern"></div>
+      <div class="room-label-wrap">
+        <div class="room-label">Luxury Modern</div>
+        <div class="room-label-tag">Opulent · Dramatic · Gold</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     WIZARD SHELL
+══════════════════════════════════════════════════════════════ -->
+<section id="wizard" class="screen">
+
+  <div class="wizard-header">
+    <button class="back-btn" onclick="wizardBack()">← Back</button>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <div class="step-label" id="stepLabel">Step 1 of 5</div>
+    <button class="save-btn" onclick="exportDesign()" title="Download your design as a file">⬇ Save</button>
+    <label class="save-btn" title="Load a previously saved design" style="cursor:pointer">
+      ⬆ Load<input type="file" accept=".json" style="display:none" onchange="importDesign(this.files[0])">
+    </label>
+    <button class="save-btn share-btn" onclick="shareDesign()" title="Copy shareable link">🔗 Share</button>
+  </div>
+
+  <!-- ──────────────────────────────────────────────────────────
+       PHASE 1 · INPUT ENGINE
+  ────────────────────────────────────────────────────────── -->
+  <div class="phase" id="phase1">
+    <div class="phase-header">
+      <div class="phase-badge">Phase 1 · Input Engine</div>
+      <h2>Tell us about your <em>space</em></h2>
+      <p>Complete in under 90 seconds. The more you share, the better your designs.</p>
+    </div>
+
+    <!-- Upload -->
+    <div class="input-section">
+      <div class="input-label">📷 Upload Room Photos or Floor Plans <span class="optional-tag">optional but recommended</span></div>
+      <input type="file" id="fileInput" multiple accept="image/*,.pdf,application/pdf" style="display:none" onchange="handleFileSelect(this.files)" />
+      <div class="upload-zone" id="uploadZone"
+           onclick="document.getElementById('fileInput').click()"
+           ondragover="event.preventDefault();this.classList.add('drag-over')"
+           ondragleave="this.classList.remove('drag-over')"
+           ondrop="handleDrop(event)">
+        <div class="upload-icon">🖼</div>
+        <div class="upload-title">Drop photos or PDFs here, or tap to browse</div>
+        <div class="upload-sub">JPG, PNG, HEIC, WebP, PDF · Multiple files supported</div>
+        <div class="upload-sub" style="margin-top:.3rem;color:#8b5cf6">Uploaded images are used to personalise your renders</div>
+      </div>
+      <div class="uploaded-grid" id="uploadedGrid"></div>
+    </div>
+
+    <!-- Room Layout (shown when no photo uploaded, always available) -->
+    <div class="input-section layout-section">
+      <div class="input-label">📐 Room Layout <span class="optional-tag">if no photo · used to generate your floor plan</span></div>
+
+      <!-- Dimensions -->
+      <div class="dim-row">
+        <div class="dim-field">
+          <label class="dim-label">Length</label>
+          <div class="dim-input-wrap">
+            <input type="number" class="dim-input" id="dimLength" min="6" max="60" placeholder="18" oninput="updateDim('length', this.value)" />
+            <span class="dim-unit">ft</span>
+          </div>
+        </div>
+        <div class="dim-x">×</div>
+        <div class="dim-field">
+          <label class="dim-label">Breadth</label>
+          <div class="dim-input-wrap">
+            <input type="number" class="dim-input" id="dimBreadth" min="6" max="60" placeholder="14" oninput="updateDim('breadth', this.value)" />
+            <span class="dim-unit">ft</span>
+          </div>
+        </div>
+        <div class="dim-x">×</div>
+        <div class="dim-field">
+          <label class="dim-label">Height</label>
+          <div class="dim-input-wrap">
+            <input type="number" class="dim-input" id="dimHeight" min="7" max="20" placeholder="10" oninput="updateDim('height', this.value)" />
+            <span class="dim-unit">ft</span>
+          </div>
+        </div>
+        <div class="dim-area-badge" id="dimAreaBadge">— sq ft</div>
+      </div>
+
+      <!-- Room shape -->
+      <div class="shape-label">Room Shape</div>
+      <div class="shape-grid" id="shapeGrid">
+        <button class="shape-btn selected" data-shape="rectangle" onclick="selectShape(this)">
+          <svg class="shape-icon" viewBox="0 0 40 28"><rect x="2" y="2" width="36" height="24" rx="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+          <span>Rectangle</span>
+        </button>
+        <button class="shape-btn" data-shape="square" onclick="selectShape(this)">
+          <svg class="shape-icon" viewBox="0 0 32 32"><rect x="2" y="2" width="28" height="28" rx="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+          <span>Square</span>
+        </button>
+        <button class="shape-btn" data-shape="l-shape" onclick="selectShape(this)">
+          <svg class="shape-icon" viewBox="0 0 36 36"><path d="M2 2 h20 v14 h14 v20 H2 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+          <span>L-Shape</span>
+        </button>
+        <button class="shape-btn" data-shape="u-shape" onclick="selectShape(this)">
+          <svg class="shape-icon" viewBox="0 0 40 32"><path d="M2 2 h10 v20 h16 v-20 h10 v28 H2 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+          <span>U-Shape</span>
+        </button>
+        <button class="shape-btn" data-shape="irregular" onclick="selectShape(this)">
+          <svg class="shape-icon" viewBox="0 0 40 36"><path d="M2 18 L12 2 L38 4 L36 28 L20 34 L2 26 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+          <span>Irregular</span>
+        </button>
+      </div>
+
+      <!-- Pillars / blocks -->
+      <div class="pillar-section">
+        <div class="pillar-header">
+          <span class="shape-label" style="margin:0">Pillars / Blocks <span class="optional-tag">if any</span></span>
+          <button class="add-pillar-btn" onclick="openPillarForm()">+ Add Pillar</button>
+        </div>
+        <div class="pillar-list" id="pillarList"></div>
+
+        <!-- inline pillar form (hidden by default) -->
+        <div class="pillar-form hidden" id="pillarForm">
+          <div class="pillar-form-grid">
+            <div class="pf-field">
+              <label class="dim-label">Position</label>
+              <select class="pf-select" id="pillarPos">
+                <option value="top-left">Top-Left corner</option>
+                <option value="top-right">Top-Right corner</option>
+                <option value="bottom-left">Bottom-Left corner</option>
+                <option value="bottom-right">Bottom-Right corner</option>
+                <option value="top-wall">Along top wall</option>
+                <option value="left-wall">Along left wall</option>
+                <option value="right-wall">Along right wall</option>
+                <option value="bottom-wall">Along bottom wall</option>
+                <option value="center">Room centre</option>
+              </select>
+            </div>
+            <div class="pf-field">
+              <label class="dim-label">Width (ft)</label>
+              <input type="number" class="dim-input" id="pillarW" min="0.5" max="6" step="0.5" placeholder="1.5" style="width:100%"/>
+            </div>
+            <div class="pf-field">
+              <label class="dim-label">Depth (ft)</label>
+              <input type="number" class="dim-input" id="pillarD" min="0.5" max="6" step="0.5" placeholder="1.5" style="width:100%"/>
+            </div>
+          </div>
+          <div class="pillar-form-actions">
+            <button class="btn-primary" style="padding:.55rem 1.2rem;font-size:.82rem" onclick="addPillar()">Add</button>
+            <button class="swap-btn" onclick="closePillarForm()">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Room Type + City -->
+    <div class="input-row">
+      <div class="input-section" style="flex:1">
+        <div class="input-label">🏠 Room Type</div>
+        <div class="room-type-grid" id="roomChips">
+          <button class="room-chip" data-room="living" onclick="selectRoom(this)">🛋 Living Room</button>
+          <button class="room-chip" data-room="bedroom" onclick="selectRoom(this)">🛏 Bedroom</button>
+          <button class="room-chip" data-room="kitchen" onclick="selectRoom(this)">🍳 Kitchen</button>
+          <button class="room-chip" data-room="bathroom" onclick="selectRoom(this)">🚿 Bathroom</button>
+          <button class="room-chip" data-room="office" onclick="selectRoom(this)">💼 Home Office</button>
+          <button class="room-chip" data-room="dining" onclick="selectRoom(this)">🍽 Dining Room</button>
+          <button class="room-chip" data-room="kids" onclick="selectRoom(this)">🧸 Kids Room</button>
+          <button class="room-chip" data-room="studio" onclick="selectRoom(this)">🏙 Studio Apartment</button>
+        </div>
+      </div>
+      <div class="input-section city-section">
+        <div class="input-label">📍 City</div>
+        <input type="text" class="city-input" id="cityInput" placeholder="e.g. Mumbai, Delhi, Bengaluru…" oninput="state.city=this.value" />
+      </div>
+    </div>
+
+    <!-- Budget -->
+    <div class="input-section">
+      <div class="input-label">💰 Budget Range</div>
+      <div class="budget-slider-wrap">
+        <input type="range" min="0" max="5" value="2" class="budget-slider" id="budgetSlider" oninput="updateBudget(this.value)" />
+        <div class="budget-labels">
+          <span>₹50K</span><span>₹1L</span><span>₹2L</span><span>₹5L</span><span>₹8L</span><span>₹10L+</span>
+        </div>
+        <div class="budget-tier-row">
+          <span class="budget-tier" id="budgetTier">Mid-Range</span>
+          <span class="budget-display" id="budgetDisplay">₹2,00,000</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Style -->
+    <div class="input-section">
+      <div class="input-label">🎨 Style Preference <span class="optional-tag">pick up to 2</span></div>
+      <div class="style-cards-grid" id="styleChips">
+        <!-- populated by JS -->
+      </div>
+    </div>
+
+    <!-- Constraints -->
+    <div class="input-section">
+      <div class="input-label">⚙️ Constraints & Preferences <span class="optional-tag">optional</span></div>
+      <div class="constraints-grid">
+        <label class="constraint-item">
+          <input type="checkbox" onchange="toggleConstraint('vastu',this.checked)" />
+          <span>🧭 Vastu compliant</span>
+        </label>
+        <label class="constraint-item">
+          <input type="checkbox" onchange="toggleConstraint('pet',this.checked)" />
+          <span>🐾 Pet-friendly materials</span>
+        </label>
+        <label class="constraint-item">
+          <input type="checkbox" onchange="toggleConstraint('rental',this.checked)" />
+          <span>🔧 Rental-friendly design</span>
+        </label>
+        <label class="constraint-item">
+          <input type="checkbox" onchange="toggleConstraint('kids',this.checked)" />
+          <span>👶 Child-safe furniture</span>
+        </label>
+        <label class="constraint-item">
+          <input type="checkbox" onchange="toggleConstraint('storage',this.checked)" />
+          <span>📦 Maximise storage</span>
+        </label>
+        <label class="constraint-item">
+          <input type="checkbox" onchange="toggleConstraint('keep',this.checked)" />
+          <span>🛋 Must keep existing furniture</span>
+        </label>
+      </div>
+      <input type="text" class="city-input" style="margin-top:.75rem" placeholder="Preferred colors or any other notes…" oninput="state.notes=this.value" />
+    </div>
+
+    <button class="btn-primary phase-next" onclick="goPhase2()">
+      Generate My Designs →
+    </button>
+  </div>
+
+  <!-- ──────────────────────────────────────────────────────────
+       PHASE 2 · DESIGN ENGINE
+  ────────────────────────────────────────────────────────── -->
+  <div class="phase hidden" id="phase2">
+    <div class="phase-header">
+      <div class="phase-badge">Phase 2 · Design Engine</div>
+      <h2>Your AI-generated <em>designs</em></h2>
+      <p>5 unique styles rendered for your room and budget. Select favourites to compare.</p>
+    </div>
+
+    <div class="design-toolbar">
+      <div class="toolbar-left">
+        <span class="fav-count" id="favCount">0 saved</span>
+        <span class="compare-hint" id="compareHint">Select 2–3 designs to compare</span>
+      </div>
+      <div class="toolbar-right">
+        <button class="tool-btn" id="compareBtn" onclick="toggleCompare()" disabled>⇄ Compare</button>
+        <button class="tool-btn" onclick="exportPDF()">↓ Export PDF</button>
+      </div>
+    </div>
+
+    <div class="designs-grid" id="designsGrid">
+      <!-- populated by JS -->
+    </div>
+
+    <!-- Compare overlay -->
+    <div class="compare-overlay hidden" id="compareOverlay">
+      <div class="compare-header">
+        <h3>Side-by-Side Comparison</h3>
+        <button class="close-compare" onclick="closeCompare()">✕</button>
+      </div>
+      <div class="compare-panels" id="comparePanels"></div>
+    </div>
+
+    <button class="btn-primary phase-next" onclick="goPhase3()">
+      Customise Selected Design →
+    </button>
+  </div>
+
+  <!-- ──────────────────────────────────────────────────────────
+       PHASE 3 · DECISION ENGINE
+  ────────────────────────────────────────────────────────── -->
+  <div class="phase hidden" id="phase3">
+    <div class="phase-header">
+      <div class="phase-badge">Phase 3 · Decision Engine</div>
+      <h2>Fine-tune your <em>design</em></h2>
+      <p>Swap elements, tweak colours, and get AI-powered commit triggers.</p>
+    </div>
+
+    <div class="decision-layout">
+      <!-- Live preview -->
+      <div class="decision-preview-wrap">
+        <div class="decision-preview" id="decisionPreview"></div>
+        <div class="ai-insights" id="aiInsights">
+          <!-- populated by JS -->
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="decision-controls">
+        <div class="control-group">
+          <div class="control-title">🎨 Wall Colour</div>
+          <div class="color-swatches" id="wallSwatches">
+            <div class="color-sw selected" style="background:#f5ede0" onclick="setWall('#f5ede0',this)" title="Warm White"></div>
+            <div class="color-sw" style="background:#ddd5c8" onclick="setWall('#ddd5c8',this)" title="Linen"></div>
+            <div class="color-sw" style="background:#c4b8a8" onclick="setWall('#c4b8a8',this)" title="Greige"></div>
+            <div class="color-sw" style="background:#a8c4c8" onclick="setWall('#a8c4c8',this)" title="Muted Teal"></div>
+            <div class="color-sw" style="background:#c8c4a8" onclick="setWall('#c8c4a8',this)" title="Sage"></div>
+            <div class="color-sw" style="background:#2d2820" onclick="setWall('#2d2820',this)" title="Charcoal"></div>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="control-title">🛋 Sofa Style</div>
+          <div class="swap-options" id="sofaOptions">
+            <button class="swap-btn active" onclick="setFurniture('sofa','modular',this)">Modular</button>
+            <button class="swap-btn" onclick="setFurniture('sofa','lshape',this)">L-Shape</button>
+            <button class="swap-btn" onclick="setFurniture('sofa','loveseat',this)">Loveseat</button>
+            <button class="swap-btn" onclick="setFurniture('sofa','sectional',this)">Sectional</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="control-title">🪵 Flooring</div>
+          <div class="swap-options">
+            <button class="swap-btn active" onclick="setFurniture('floor','wood',this)">Hardwood</button>
+            <button class="swap-btn" onclick="setFurniture('floor','marble',this)">Marble</button>
+            <button class="swap-btn" onclick="setFurniture('floor','tile',this)">Tile</button>
+            <button class="swap-btn" onclick="setFurniture('floor','rug',this)">Rug over Tile</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="control-title">💡 Lighting Mood</div>
+          <div class="swap-options">
+            <button class="swap-btn active" onclick="setLighting('warm',this)">☀ Warm</button>
+            <button class="swap-btn" onclick="setLighting('cool',this)">❄ Cool</button>
+            <button class="swap-btn" onclick="setLighting('dramatic',this)">🌙 Dramatic</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="control-title">🛋 Decor Toggles</div>
+          <div class="toggle-row">
+            <label class="toggle-item"><input type="checkbox" checked onchange="toggleDecor('plant',this.checked)"><span>Plants</span></label>
+            <label class="toggle-item"><input type="checkbox" checked onchange="toggleDecor('art',this.checked)"><span>Wall Art</span></label>
+            <label class="toggle-item"><input type="checkbox" onchange="toggleDecor('rug',this.checked)"><span>Area Rug</span></label>
+            <label class="toggle-item"><input type="checkbox" onchange="toggleDecor('curtains',this.checked)"><span>Curtains</span></label>
+          </div>
+        </div>
+
+        <div class="commit-card" id="commitCard">
+          <div class="commit-badge">🔥 Most Popular Choice</div>
+          <div class="commit-title" id="commitTitle">Japandi with Warm White walls</div>
+          <div class="commit-meta">
+            <span>⏱ 3–4 weeks</span>
+            <span>💰 <span id="commitCost">₹2,40,000</span></span>
+          </div>
+          <div class="commit-savings" id="commitSavings">💡 Saves 18% vs similar designs</div>
+          <button class="btn-primary" style="width:100%;margin-top:1rem" onclick="goPhase4()">
+            Lock This Design →
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ──────────────────────────────────────────────────────────
+       PHASE 4 · EXECUTION ENGINE
+  ────────────────────────────────────────────────────────── -->
+  <div class="phase hidden" id="phase4">
+    <div class="phase-header">
+      <div class="phase-badge">Phase 4 · Execution Engine</div>
+      <h2>Your <em>execution plan</em></h2>
+      <p>2D layout, MEP map, material BOM — everything your contractor needs.</p>
+    </div>
+
+    <div class="exec-tabs">
+      <button class="exec-tab active" onclick="switchExecTab('layout',this)">📐 Layout Plan</button>
+      <button class="exec-tab" onclick="switchExecTab('mep',this)">⚡ MEP</button>
+      <button class="exec-tab" onclick="switchExecTab('bom',this)">📋 Material BOM</button>
+      <button class="exec-tab" onclick="switchExecTab('timeline',this)">📅 Timeline</button>
+    </div>
+
+    <!-- Layout tab -->
+    <div class="exec-panel" id="tab-layout">
+      <div class="layout-plan-wrap">
+        <svg class="floor-plan" viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg" id="floorPlanSVG">
+          <!-- populated by JS -->
+        </svg>
+        <div class="plan-legend">
+          <div class="legend-item"><span class="legend-dot" style="background:#8b5cf6"></span>Seating Zone</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#34d399"></span>Circulation Path</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#fb923c"></span>Storage Zone</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#60a5fa"></span>Focal Point</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MEP tab -->
+    <div class="exec-panel hidden" id="tab-mep">
+      <div class="mep-grid" id="mepGrid">
+        <!-- populated by JS -->
+      </div>
+    </div>
+
+    <!-- BOM tab -->
+    <div class="exec-panel hidden" id="tab-bom">
+      <div class="bom-table-wrap">
+        <table class="bom-table" id="bomTable">
+          <thead>
+            <tr>
+              <th>Material</th>
+              <th>Specification</th>
+              <th>Qty</th>
+              <th>Unit</th>
+              <th>Est. Cost</th>
+              <th>Alt. Option</th>
+            </tr>
+          </thead>
+          <tbody id="bomBody">
+            <!-- populated by JS -->
+          </tbody>
+        </table>
+        <div class="bom-total-row">
+          <span>Total Material Cost</span>
+          <span id="bomTotal" class="bom-total-val">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline tab -->
+    <div class="exec-panel hidden" id="tab-timeline">
+      <div class="timeline-container" id="timelineContainer">
+        <!-- populated by JS -->
+      </div>
+    </div>
+
+    <button class="btn-primary phase-next" onclick="goPhase5()">
+      Shop the Look →
+    </button>
+  </div>
+
+  <!-- ──────────────────────────────────────────────────────────
+       PHASE 5 · PROCUREMENT ENGINE
+  ────────────────────────────────────────────────────────── -->
+  <div class="phase hidden" id="phase5">
+    <div class="phase-header">
+      <div class="phase-badge">Phase 5 · Procurement</div>
+      <h2>Shop your <em>design</em></h2>
+      <p>Every item AI-curated to match your style, budget, and city availability.</p>
+    </div>
+
+    <div class="purchase-layout">
+      <div class="product-section">
+        <div class="product-filters">
+          <button class="filter-btn active" onclick="filterProducts('all',this)">All Items</button>
+          <button class="filter-btn" onclick="filterProducts('furniture',this)">Furniture</button>
+          <button class="filter-btn" onclick="filterProducts('lighting',this)">Lighting</button>
+          <button class="filter-btn" onclick="filterProducts('textiles',this)">Textiles</button>
+          <button class="filter-btn" onclick="filterProducts('decor',this)">Décor</button>
+          <button class="filter-btn" onclick="filterProducts('material',this)">Materials</button>
+        </div>
+        <div class="product-grid" id="productGrid"></div>
+      </div>
+
+      <div class="cart-summary" id="cartSummary">
+        <div class="cart-header">
+          <span class="cart-title">🛍 Cart</span>
+          <span class="cart-count" id="cartCount">0 items</span>
+        </div>
+        <div class="cart-items" id="cartItems"></div>
+        <div class="cart-footer">
+          <div class="cart-total">
+            <span>Subtotal</span>
+            <span id="cartTotal">₹0</span>
+          </div>
+          <div class="vendor-info">📦 Ships from verified Indian vendors</div>
+          <button class="btn-primary" style="width:100%;margin-top:1rem" onclick="checkout()">
+            Place Order →
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SUCCESS
+══════════════════════════════════════════════════════════════ -->
+<section id="success" class="screen">
+  <div class="success-content">
+    <div class="success-icon">🎉</div>
+    <h2>Order Confirmed!</h2>
+    <p>Your curated design kit is on its way. Tracking info and your room-staging guide have been sent.</p>
+    <div class="success-steps">
+      <div class="ss-item">📦 Items ship in 5–7 business days</div>
+      <div class="ss-item">📐 AR placement guide sent to email</div>
+      <div class="ss-item">👷 Contractor referrals available on request</div>
+      <div class="ss-item">🎨 Style card + installation guide included</div>
+    </div>
+    <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;margin-top:2rem">
+      <button class="btn-primary" onclick="restart()">Design Another Room →</button>
+      <button class="btn-secondary" onclick="exportDesign()">⬇ Save Design</button>
+    </div>
+  </div>
+</section>
+
+<script src="firebase.js"></script>
+<script src="app.js?v=7"></script>
+</body>
+</html>
