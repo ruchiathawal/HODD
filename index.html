@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>HODD — Dream it. Design it. Own it.</title>
-  <link rel="stylesheet" href="style.css?v=13" />
+  <link rel="stylesheet" href="style.css?v=14" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
 
@@ -132,36 +132,137 @@
     <div class="phase-header">
       <div class="phase-badge">Step 1 · Your Space</div>
       <h2>Show us your <em>room</em></h2>
-      <p>Share your layout and dimensions. Takes under 90 seconds — the more we know, the better your results.</p>
+      <p>Upload a photo and we'll take it from there — or let us design your layout from scratch.</p>
     </div>
 
-    <!-- Upload -->
-    <div class="input-section">
-      <div class="input-label">📷 Upload Room Photos or Floor Plans <span class="optional-tag">optional but recommended</span></div>
-      <input type="file" id="fileInput" multiple accept="image/*,.pdf,application/pdf" style="display:none" onchange="handleFileSelect(this.files)" />
-      <div class="upload-zone" id="uploadZone"
-           onclick="document.getElementById('fileInput').click()"
-           ondragover="event.preventDefault();this.classList.add('drag-over')"
-           ondragleave="this.classList.remove('drag-over')"
-           ondrop="handleDrop(event)">
-        <div class="upload-icon">🖼</div>
-        <div class="upload-title">Drop photos or PDFs here, or tap to browse</div>
-        <div class="upload-sub">JPG, PNG, HEIC, WebP, PDF · Multiple files supported</div>
-        <div class="upload-sub" style="margin-top:.3rem;color:#8b5cf6">Uploaded images are used to personalise your renders</div>
+    <!-- Two-column body -->
+    <div class="phase1-body">
+
+      <!-- ── LEFT: image preview / canvas ── -->
+      <div class="phase1-left">
+
+        <!-- Upload zone (visible when no image) -->
+        <div id="p1UploadArea">
+          <input type="file" id="fileInput" multiple accept="image/*,.pdf,application/pdf" style="display:none" onchange="handleFileSelect(this.files)" />
+          <div class="upload-zone p1-upload-zone" id="uploadZone"
+               onclick="document.getElementById('fileInput').click()"
+               ondragover="event.preventDefault();this.classList.add('drag-over')"
+               ondragleave="this.classList.remove('drag-over')"
+               ondrop="handleDrop(event)">
+            <div class="upload-icon">🖼</div>
+            <div class="upload-title">Drop your room photo here</div>
+            <div class="upload-sub">JPG, PNG, HEIC, WebP · or tap to browse</div>
+          </div>
+          <button class="p1-layout-link" onclick="showLayoutPopup()">
+            No photo? Let us design your layout →
+          </button>
+        </div>
+
+        <!-- Big image preview (visible after upload) -->
+        <div class="p1-image-preview hidden" id="p1ImagePreview">
+          <img id="p1PreviewImg" src="" alt="Your room" />
+          <div class="p1-image-badge">✦ Image received — no dimensions needed</div>
+          <button class="p1-change-btn" onclick="clearRoomImage()">✕ Change photo</button>
+        </div>
+        <!-- hidden thumb grid kept for JS compatibility -->
+        <div class="uploaded-grid" id="uploadedGrid" style="display:none"></div>
+
+        <!-- Canvas layout viz (visible after layout design) -->
+        <div class="p1-canvas-wrap hidden" id="p1CanvasWrap">
+          <div class="p1-canvas-label">Your room, visualized</div>
+          <canvas id="roomCanvas" width="420" height="380"></canvas>
+          <div class="p1-canvas-note">Live floor plan · updates as you edit</div>
+          <button class="p1-change-btn" onclick="showLayoutPopup()">✎ Edit dimensions</button>
+        </div>
+
       </div>
-      <div class="uploaded-grid" id="uploadedGrid"></div>
-    </div>
 
-    <!-- Room Layout (shown when no photo uploaded, always available) -->
-    <div class="input-section layout-section">
-      <div class="input-label">📐 Room Layout <span class="optional-tag">if no photo · used to generate your floor plan</span></div>
+      <!-- ── RIGHT: form ── -->
+      <div class="phase1-right">
+
+        <!-- Room Type dropdown -->
+        <div class="input-section">
+          <div class="input-label">🏠 Room Type</div>
+          <select class="room-select" id="roomSelect" onchange="selectRoomDropdown(this.value)">
+            <option value="">Select room type…</option>
+            <option value="living">🛋  Living Room</option>
+            <option value="bedroom">🛏  Bedroom</option>
+            <option value="kitchen">🍳  Kitchen</option>
+            <option value="dining">🍽  Dining Room</option>
+            <option value="bathroom">🚿  Bathroom</option>
+            <option value="kids">🧸  Kids Room</option>
+            <option value="studio">🏙  Studio Apartment</option>
+            <option value="office">💼  Home Office</option>
+            <option value="workoffice">🏢  Office / Workspace</option>
+          </select>
+        </div>
+
+        <!-- City -->
+        <div class="input-section">
+          <div class="input-label">📍 City</div>
+          <input type="text" class="city-input" id="cityInput" placeholder="e.g. Mumbai, Delhi, Bengaluru…" oninput="state.city=this.value" />
+        </div>
+
+        <!-- Budget -->
+        <div class="input-section">
+          <div class="input-label">💰 Budget Range</div>
+          <div class="budget-slider-wrap">
+            <input type="range" min="0" max="5" value="2" class="budget-slider" id="budgetSlider" oninput="updateBudget(this.value)" />
+            <div class="budget-labels">
+              <span>₹50K</span><span>₹1L</span><span>₹2L</span><span>₹5L</span><span>₹8L</span><span>₹10L+</span>
+            </div>
+            <div class="budget-tier-row">
+              <span class="budget-tier" id="budgetTier">Mid-Range</span>
+              <span class="budget-display" id="budgetDisplay">₹2,00,000</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Style -->
+        <div class="input-section">
+          <div class="input-label">🎨 Style Preference <span class="optional-tag">pick up to 2</span></div>
+          <div class="style-cards-grid" id="styleChips">
+            <!-- populated by JS -->
+          </div>
+        </div>
+
+        <!-- Constraints -->
+        <div class="input-section">
+          <div class="input-label">⚙️ Preferences <span class="optional-tag">optional</span></div>
+          <div class="constraints-grid">
+            <label class="constraint-item"><input type="checkbox" onchange="toggleConstraint('vastu',this.checked)" /><span>🧭 Vastu compliant</span></label>
+            <label class="constraint-item"><input type="checkbox" onchange="toggleConstraint('pet',this.checked)" /><span>🐾 Pet-friendly</span></label>
+            <label class="constraint-item"><input type="checkbox" onchange="toggleConstraint('rental',this.checked)" /><span>🔧 Rental-friendly</span></label>
+            <label class="constraint-item"><input type="checkbox" onchange="toggleConstraint('kids',this.checked)" /><span>👶 Child-safe</span></label>
+            <label class="constraint-item"><input type="checkbox" onchange="toggleConstraint('storage',this.checked)" /><span>📦 Max storage</span></label>
+            <label class="constraint-item"><input type="checkbox" onchange="toggleConstraint('keep',this.checked)" /><span>🛋 Keep existing furniture</span></label>
+          </div>
+          <input type="text" class="city-input" style="margin-top:.75rem" placeholder="Preferred colors or any other notes…" oninput="state.notes=this.value" />
+        </div>
+
+      </div>
+    </div><!-- /phase1-body -->
+
+    <button class="btn-primary phase-next" onclick="goPhase2()">
+      Revisualize My Room →
+    </button>
+  </div>
+
+  <!-- ── Layout Design Popup ── -->
+  <div class="layout-popup-overlay hidden" id="layoutPopupOverlay" onclick="if(event.target===this)closeLayoutPopup()">
+    <div class="layout-popup">
+      <button class="layout-popup-close" onclick="closeLayoutPopup()">✕</button>
+      <div class="layout-popup-icon">📐</div>
+      <h3>Design your layout</h3>
+      <p>Tell us your room dimensions and we'll generate a floor plan for you — just like an architect would.</p>
 
       <!-- Dimensions -->
+      <div class="lp-section-label">Room Dimensions</div>
       <div class="dim-row">
         <div class="dim-field">
           <label class="dim-label">Length</label>
           <div class="dim-input-wrap">
-            <input type="number" class="dim-input" id="dimLength" min="6" max="60" placeholder="18" oninput="updateDim('length', this.value)" />
+            <input type="number" class="dim-input" id="dimLength" min="6" max="60" placeholder="18" oninput="updateDim('length',this.value);drawRoomLayout()" />
             <span class="dim-unit">ft</span>
           </div>
         </div>
@@ -169,7 +270,7 @@
         <div class="dim-field">
           <label class="dim-label">Breadth</label>
           <div class="dim-input-wrap">
-            <input type="number" class="dim-input" id="dimBreadth" min="6" max="60" placeholder="14" oninput="updateDim('breadth', this.value)" />
+            <input type="number" class="dim-input" id="dimBreadth" min="6" max="60" placeholder="14" oninput="updateDim('breadth',this.value);drawRoomLayout()" />
             <span class="dim-unit">ft</span>
           </div>
         </div>
@@ -177,7 +278,7 @@
         <div class="dim-field">
           <label class="dim-label">Height</label>
           <div class="dim-input-wrap">
-            <input type="number" class="dim-input" id="dimHeight" min="7" max="20" placeholder="10" oninput="updateDim('height', this.value)" />
+            <input type="number" class="dim-input" id="dimHeight" min="7" max="20" placeholder="10" oninput="updateDim('height',this.value)" />
             <span class="dim-unit">ft</span>
           </div>
         </div>
@@ -185,151 +286,71 @@
       </div>
 
       <!-- Room shape -->
-      <div class="shape-label">Room Shape</div>
+      <div class="lp-section-label" style="margin-top:1.2rem">Room Shape</div>
       <div class="shape-grid" id="shapeGrid">
-        <button class="shape-btn selected" data-shape="rectangle" onclick="selectShape(this)">
+        <button class="shape-btn selected" data-shape="rectangle" onclick="selectShape(this);drawRoomLayout()">
           <svg class="shape-icon" viewBox="0 0 40 28"><rect x="2" y="2" width="36" height="24" rx="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>
           <span>Rectangle</span>
         </button>
-        <button class="shape-btn" data-shape="square" onclick="selectShape(this)">
+        <button class="shape-btn" data-shape="square" onclick="selectShape(this);drawRoomLayout()">
           <svg class="shape-icon" viewBox="0 0 32 32"><rect x="2" y="2" width="28" height="28" rx="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>
           <span>Square</span>
         </button>
-        <button class="shape-btn" data-shape="l-shape" onclick="selectShape(this)">
+        <button class="shape-btn" data-shape="l-shape" onclick="selectShape(this);drawRoomLayout()">
           <svg class="shape-icon" viewBox="0 0 36 36"><path d="M2 2 h20 v14 h14 v20 H2 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
           <span>L-Shape</span>
         </button>
-        <button class="shape-btn" data-shape="u-shape" onclick="selectShape(this)">
+        <button class="shape-btn" data-shape="u-shape" onclick="selectShape(this);drawRoomLayout()">
           <svg class="shape-icon" viewBox="0 0 40 32"><path d="M2 2 h10 v20 h16 v-20 h10 v28 H2 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
           <span>U-Shape</span>
         </button>
-        <button class="shape-btn" data-shape="irregular" onclick="selectShape(this)">
+        <button class="shape-btn" data-shape="irregular" onclick="selectShape(this);drawRoomLayout()">
           <svg class="shape-icon" viewBox="0 0 40 36"><path d="M2 18 L12 2 L38 4 L36 28 L20 34 L2 26 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
           <span>Irregular</span>
         </button>
       </div>
 
-      <!-- Pillars / blocks -->
-      <div class="pillar-section">
-        <div class="pillar-header">
-          <span class="shape-label" style="margin:0">Pillars / Blocks <span class="optional-tag">if any</span></span>
-          <button class="add-pillar-btn" onclick="openPillarForm()">+ Add Pillar</button>
-        </div>
-        <div class="pillar-list" id="pillarList"></div>
-
-        <!-- inline pillar form (hidden by default) -->
-        <div class="pillar-form hidden" id="pillarForm">
-          <div class="pillar-form-grid">
-            <div class="pf-field">
-              <label class="dim-label">Position</label>
-              <select class="pf-select" id="pillarPos">
-                <option value="top-left">Top-Left corner</option>
-                <option value="top-right">Top-Right corner</option>
-                <option value="bottom-left">Bottom-Left corner</option>
-                <option value="bottom-right">Bottom-Right corner</option>
-                <option value="top-wall">Along top wall</option>
-                <option value="left-wall">Along left wall</option>
-                <option value="right-wall">Along right wall</option>
-                <option value="bottom-wall">Along bottom wall</option>
-                <option value="center">Room centre</option>
-              </select>
-            </div>
-            <div class="pf-field">
-              <label class="dim-label">Width (ft)</label>
-              <input type="number" class="dim-input" id="pillarW" min="0.5" max="6" step="0.5" placeholder="1.5" style="width:100%"/>
-            </div>
-            <div class="pf-field">
-              <label class="dim-label">Depth (ft)</label>
-              <input type="number" class="dim-input" id="pillarD" min="0.5" max="6" step="0.5" placeholder="1.5" style="width:100%"/>
-            </div>
+      <!-- Pillars -->
+      <div class="lp-section-label" style="margin-top:1.2rem">
+        Pillars / Blocks <span class="optional-tag">if any</span>
+        <button class="add-pillar-btn" style="margin-left:.6rem" onclick="openPillarForm()">+ Add Pillar</button>
+      </div>
+      <div class="pillar-list" id="pillarList"></div>
+      <div class="pillar-form hidden" id="pillarForm">
+        <div class="pillar-form-grid">
+          <div class="pf-field">
+            <label class="dim-label">Position</label>
+            <select class="pf-select" id="pillarPos">
+              <option value="top-left">Top-Left corner</option>
+              <option value="top-right">Top-Right corner</option>
+              <option value="bottom-left">Bottom-Left corner</option>
+              <option value="bottom-right">Bottom-Right corner</option>
+              <option value="top-wall">Along top wall</option>
+              <option value="left-wall">Along left wall</option>
+              <option value="right-wall">Along right wall</option>
+              <option value="bottom-wall">Along bottom wall</option>
+              <option value="center">Room centre</option>
+            </select>
           </div>
-          <div class="pillar-form-actions">
-            <button class="btn-primary" style="padding:.55rem 1.2rem;font-size:.82rem" onclick="addPillar()">Add</button>
-            <button class="swap-btn" onclick="closePillarForm()">Cancel</button>
+          <div class="pf-field">
+            <label class="dim-label">Width (ft)</label>
+            <input type="number" class="dim-input" id="pillarW" min="0.5" max="6" step="0.5" placeholder="1.5" style="width:100%"/>
+          </div>
+          <div class="pf-field">
+            <label class="dim-label">Depth (ft)</label>
+            <input type="number" class="dim-input" id="pillarD" min="0.5" max="6" step="0.5" placeholder="1.5" style="width:100%"/>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- Room Type + City -->
-    <div class="input-row">
-      <div class="input-section" style="flex:1">
-        <div class="input-label">🏠 Room Type</div>
-        <div class="room-type-grid" id="roomChips">
-          <button class="room-chip" data-room="living" onclick="selectRoom(this)">🛋 Living Room</button>
-          <button class="room-chip" data-room="bedroom" onclick="selectRoom(this)">🛏 Bedroom</button>
-          <button class="room-chip" data-room="kitchen" onclick="selectRoom(this)">🍳 Kitchen</button>
-          <button class="room-chip" data-room="bathroom" onclick="selectRoom(this)">🚿 Bathroom</button>
-          <button class="room-chip" data-room="office" onclick="selectRoom(this)">💼 Home Office</button>
-          <button class="room-chip" data-room="dining" onclick="selectRoom(this)">🍽 Dining Room</button>
-          <button class="room-chip" data-room="kids" onclick="selectRoom(this)">🧸 Kids Room</button>
-          <button class="room-chip" data-room="studio" onclick="selectRoom(this)">🏙 Studio Apartment</button>
+        <div class="pillar-form-actions">
+          <button class="btn-primary" style="padding:.55rem 1.2rem;font-size:.82rem" onclick="addPillar();drawRoomLayout()">Add</button>
+          <button class="swap-btn" onclick="closePillarForm()">Cancel</button>
         </div>
       </div>
-      <div class="input-section city-section">
-        <div class="input-label">📍 City</div>
-        <input type="text" class="city-input" id="cityInput" placeholder="e.g. Mumbai, Delhi, Bengaluru…" oninput="state.city=this.value" />
-      </div>
-    </div>
 
-    <!-- Budget -->
-    <div class="input-section">
-      <div class="input-label">💰 Budget Range</div>
-      <div class="budget-slider-wrap">
-        <input type="range" min="0" max="5" value="2" class="budget-slider" id="budgetSlider" oninput="updateBudget(this.value)" />
-        <div class="budget-labels">
-          <span>₹50K</span><span>₹1L</span><span>₹2L</span><span>₹5L</span><span>₹8L</span><span>₹10L+</span>
-        </div>
-        <div class="budget-tier-row">
-          <span class="budget-tier" id="budgetTier">Mid-Range</span>
-          <span class="budget-display" id="budgetDisplay">₹2,00,000</span>
-        </div>
-      </div>
+      <button class="btn-primary" style="width:100%;margin-top:1.6rem" onclick="generateAndShowLayout()">
+        Generate My Floor Plan →
+      </button>
     </div>
-
-    <!-- Style -->
-    <div class="input-section">
-      <div class="input-label">🎨 Style Preference <span class="optional-tag">pick up to 2</span></div>
-      <div class="style-cards-grid" id="styleChips">
-        <!-- populated by JS -->
-      </div>
-    </div>
-
-    <!-- Constraints -->
-    <div class="input-section">
-      <div class="input-label">⚙️ Constraints & Preferences <span class="optional-tag">optional</span></div>
-      <div class="constraints-grid">
-        <label class="constraint-item">
-          <input type="checkbox" onchange="toggleConstraint('vastu',this.checked)" />
-          <span>🧭 Vastu compliant</span>
-        </label>
-        <label class="constraint-item">
-          <input type="checkbox" onchange="toggleConstraint('pet',this.checked)" />
-          <span>🐾 Pet-friendly materials</span>
-        </label>
-        <label class="constraint-item">
-          <input type="checkbox" onchange="toggleConstraint('rental',this.checked)" />
-          <span>🔧 Rental-friendly design</span>
-        </label>
-        <label class="constraint-item">
-          <input type="checkbox" onchange="toggleConstraint('kids',this.checked)" />
-          <span>👶 Child-safe furniture</span>
-        </label>
-        <label class="constraint-item">
-          <input type="checkbox" onchange="toggleConstraint('storage',this.checked)" />
-          <span>📦 Maximise storage</span>
-        </label>
-        <label class="constraint-item">
-          <input type="checkbox" onchange="toggleConstraint('keep',this.checked)" />
-          <span>🛋 Must keep existing furniture</span>
-        </label>
-      </div>
-      <input type="text" class="city-input" style="margin-top:.75rem" placeholder="Preferred colors or any other notes…" oninput="state.notes=this.value" />
-    </div>
-
-    <button class="btn-primary phase-next" onclick="goPhase2()">
-      Revisualize My Room →
-    </button>
   </div>
 
   <!-- ──────────────────────────────────────────────────────────

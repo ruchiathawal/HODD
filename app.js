@@ -67,11 +67,236 @@ function restart() {
 /* ═══════════════════════════════════════════════════════════════
    PHASE 1 · INPUT ENGINE
 ═══════════════════════════════════════════════════════════════ */
-function selectRoom(el) {
-  document.querySelectorAll('.room-chip').forEach(c => c.classList.remove('selected'));
-  el.classList.add('selected');
-  state.room = el.dataset.room;
+function selectRoomDropdown(val) {
+  state.room = val || null;
   autosave();
+}
+// legacy — keep so any old references don't break
+function selectRoom(el) {
+  state.room = el?.dataset?.room || null;
+  autosave();
+}
+
+/* ── Layout popup ── */
+function showLayoutPopup() {
+  document.getElementById('layoutPopupOverlay').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+function closeLayoutPopup() {
+  document.getElementById('layoutPopupOverlay').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+function generateAndShowLayout() {
+  closeLayoutPopup();
+  // show canvas panel, hide upload area
+  document.getElementById('p1UploadArea').classList.add('hidden');
+  document.getElementById('p1ImagePreview').classList.add('hidden');
+  document.getElementById('p1CanvasWrap').classList.remove('hidden');
+  drawRoomLayout();
+}
+
+/* ── Room canvas visualizer ── */
+function drawRoomLayout() {
+  const canvas = document.getElementById('roomCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  const l = parseFloat(document.getElementById('dimLength')?.value) || 18;
+  const b = parseFloat(document.getElementById('dimBreadth')?.value) || 14;
+  const shape = state.roomShape || 'rectangle';
+
+  const pad = 52;
+  const scale = Math.min((W - pad * 2) / l, (H - pad * 2) / b);
+  const rw = l * scale, rh = b * scale;
+  const rx = (W - rw) / 2, ry = (H - rh) / 2;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  ctx.fillStyle = '#16100a';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid lines (1 ft spacing)
+  ctx.strokeStyle = 'rgba(201,146,58,.07)';
+  ctx.lineWidth = 1;
+  for (let x = rx; x <= rx + rw + 0.5; x += scale) {
+    ctx.beginPath(); ctx.moveTo(x, ry); ctx.lineTo(x, ry + rh); ctx.stroke();
+  }
+  for (let y = ry; y <= ry + rh + 0.5; y += scale) {
+    ctx.beginPath(); ctx.moveTo(rx, y); ctx.lineTo(rx + rw, y); ctx.stroke();
+  }
+
+  // Room fill & outline path based on shape
+  ctx.beginPath();
+  if (shape === 'l-shape') {
+    const mx = rx + rw * 0.55, my = ry + rh * 0.45;
+    ctx.moveTo(rx, ry); ctx.lineTo(mx, ry); ctx.lineTo(mx, my);
+    ctx.lineTo(rx + rw, my); ctx.lineTo(rx + rw, ry + rh);
+    ctx.lineTo(rx, ry + rh); ctx.closePath();
+  } else if (shape === 'u-shape') {
+    const wa = rw * 0.28, wb = rw * 0.72, mh = rh * 0.5;
+    ctx.moveTo(rx, ry); ctx.lineTo(rx + wa, ry); ctx.lineTo(rx + wa, ry + mh);
+    ctx.lineTo(rx + wb, ry + mh); ctx.lineTo(rx + wb, ry);
+    ctx.lineTo(rx + rw, ry); ctx.lineTo(rx + rw, ry + rh);
+    ctx.lineTo(rx, ry + rh); ctx.closePath();
+  } else {
+    ctx.rect(rx, ry, rw, rh);
+  }
+
+  ctx.fillStyle = 'rgba(201,146,58,.07)';
+  ctx.fill();
+  ctx.strokeStyle = '#c9923a';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // Door arc (bottom-right)
+  const doorSize = Math.min(scale * 3, rw * 0.22);
+  ctx.beginPath();
+  ctx.arc(rx + rw, ry + rh, doorSize, Math.PI, Math.PI * 1.5);
+  ctx.strokeStyle = 'rgba(201,146,58,.45)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 4]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  // door gap on wall
+  ctx.clearRect(rx + rw - doorSize - 1, ry + rh - 2.5, doorSize + 1, 5);
+
+  // Dimension labels
+  ctx.fillStyle = '#c9923a';
+  ctx.font = `bold ${Math.max(11, Math.min(14, scale * 0.7))}px Inter, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  // top label (length)
+  ctx.fillText(`${l} ft`, rx + rw / 2, ry - 18);
+  // left label (breadth) — rotated
+  ctx.save();
+  ctx.translate(rx - 20, ry + rh / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText(`${b} ft`, 0, 0);
+  ctx.restore();
+
+  // Dimension tick marks
+  ctx.strokeStyle = 'rgba(201,146,58,.5)';
+  ctx.lineWidth = 1.2;
+  [[rx, ry - 10, rx, ry - 26], [rx + rw, ry - 10, rx + rw, ry - 26],
+   [rx - 10, ry, rx - 26, ry], [rx - 10, ry + rh, rx - 26, ry + rh]].forEach(([x1,y1,x2,y2]) => {
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  });
+  ctx.beginPath(); ctx.moveTo(rx, ry - 18); ctx.lineTo(rx + rw, ry - 18); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(rx - 18, ry); ctx.lineTo(rx - 18, ry + rh); ctx.stroke();
+
+  // Pillars
+  if (state.pillars?.length) {
+    state.pillars.forEach(p => {
+      const pw = (p.w || 1.5) * scale, pd = (p.d || 1.5) * scale;
+      let px = rx, py = ry;
+      if (p.pos.includes('right')) px = rx + rw - pw;
+      if (p.pos.includes('bottom')) py = ry + rh - pd;
+      if (p.pos === 'center') { px = rx + rw / 2 - pw / 2; py = ry + rh / 2 - pd / 2; }
+      if (p.pos === 'top-wall') { px = rx + rw / 2 - pw / 2; }
+      if (p.pos === 'bottom-wall') { px = rx + rw / 2 - pw / 2; py = ry + rh - pd; }
+      if (p.pos === 'left-wall') { py = ry + rh / 2 - pd / 2; }
+      if (p.pos === 'right-wall') { px = rx + rw - pw; py = ry + rh / 2 - pd / 2; }
+      ctx.fillStyle = 'rgba(201,146,58,.55)';
+      ctx.fillRect(px, py, pw, pd);
+      ctx.strokeStyle = '#c9923a';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(px, py, pw, pd);
+      // hatch pattern
+      ctx.strokeStyle = 'rgba(201,146,58,.3)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < pw + pd; i += 5) {
+        ctx.beginPath(); ctx.moveTo(px + Math.max(0,i-pd), py + Math.min(pd,i));
+        ctx.lineTo(px + Math.min(pw,i), py + Math.max(0,i-pw)); ctx.stroke();
+      }
+    });
+  }
+
+  // Furniture silhouettes (based on room type)
+  drawFurniture(ctx, rx, ry, rw, rh, state.room);
+
+  // Compass rose (top-right)
+  drawCompass(ctx, W - 26, 26, 14);
+}
+
+function drawFurniture(ctx, rx, ry, rw, rh, room) {
+  ctx.save();
+  ctx.globalAlpha = 0.35;
+  const c = '#d4a050';
+  const cx = rx + rw / 2, cy = ry + rh / 2;
+
+  if (room === 'bedroom') {
+    // Bed (top-center)
+    const bw = Math.min(rw * 0.5, 90), bh = Math.min(rh * 0.45, 75);
+    roundRect(ctx, cx - bw/2, ry + rh*0.1, bw, bh, 5, c);
+    // headboard
+    ctx.fillStyle = c; ctx.fillRect(cx - bw/2, ry + rh*0.1, bw, 8);
+    // Side tables
+    roundRect(ctx, cx - bw/2 - 18, ry + rh*0.1 + 4, 14, 14, 3, c);
+    roundRect(ctx, cx + bw/2 + 4, ry + rh*0.1 + 4, 14, 14, 3, c);
+  } else if (room === 'dining') {
+    // Round table
+    ctx.beginPath(); ctx.arc(cx, cy, Math.min(rw,rh)*0.18, 0, Math.PI*2);
+    ctx.fillStyle = c; ctx.fill();
+    // Chairs (4)
+    for (let a = 0; a < 4; a++) {
+      const ang = a * Math.PI/2, r = Math.min(rw,rh)*0.28;
+      roundRect(ctx, cx + Math.cos(ang)*r - 8, cy + Math.sin(ang)*r - 8, 16, 16, 4, c);
+    }
+  } else if (room === 'kitchen') {
+    // Counter along top wall
+    ctx.fillStyle = c; ctx.fillRect(rx + 6, ry + 6, rw - 12, 18);
+    ctx.fillRect(rx + 6, ry + 6, 18, rh * 0.45);
+  } else if (room === 'office' || room === 'workoffice') {
+    // Desk
+    roundRect(ctx, cx - 45, ry + rh*0.25, 90, 40, 4, c);
+    // Chair
+    ctx.beginPath(); ctx.arc(cx, ry + rh*0.25 + 62, 16, 0, Math.PI*2);
+    ctx.fillStyle = c; ctx.fill();
+  } else {
+    // Living room — sofa + coffee table
+    const sw = Math.min(rw * 0.55, 100), sh = 28;
+    roundRect(ctx, cx - sw/2, ry + rh*0.55, sw, sh, 5, c);
+    // sofa back
+    ctx.fillStyle = c; ctx.fillRect(cx - sw/2, ry + rh*0.55, sw, 8);
+    // arms
+    roundRect(ctx, cx - sw/2 - 10, ry + rh*0.55, 10, sh, 5, c);
+    roundRect(ctx, cx + sw/2, ry + rh*0.55, 10, sh, 5, c);
+    // coffee table
+    roundRect(ctx, cx - 24, ry + rh*0.42, 48, 28, 4, c);
+    // plant
+    ctx.beginPath(); ctx.arc(rx + rw - 16, ry + 16, 8, 0, Math.PI*2);
+    ctx.fillStyle = c; ctx.fill();
+  }
+  ctx.restore();
+}
+
+function roundRect(ctx, x, y, w, h, r, color) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y); ctx.lineTo(x+w-r, y);
+  ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+  ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+  ctx.lineTo(x+r, y+h); ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+  ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y);
+  ctx.closePath();
+  ctx.fillStyle = color; ctx.fill();
+}
+
+function drawCompass(ctx, cx, cy, r) {
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  ctx.strokeStyle = '#c9923a'; ctx.fillStyle = '#c9923a';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.stroke();
+  ['N','E','S','W'].forEach((d, i) => {
+    const a = i * Math.PI/2 - Math.PI/2;
+    ctx.font = '8px Inter,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(d, cx + Math.cos(a)*(r+7), cy + Math.sin(a)*(r+7));
+    ctx.beginPath(); ctx.moveTo(cx + Math.cos(a)*(r-3), cy + Math.sin(a)*(r-3));
+    ctx.lineTo(cx + Math.cos(a)*r, cy + Math.sin(a)*r); ctx.stroke();
+  });
+  ctx.restore();
 }
 
 function selectStyle(el) {
@@ -104,14 +329,33 @@ function handleFileSelect(files) {
     if (state.uploadedFiles.length >= 8) return;
     if (file.type.startsWith('image/')) {
       const reader = new FileReader();
-      reader.onload = e => addUploadThumb({ type: 'image', src: e.target.result, name: file.name });
+      reader.onload = e => {
+        addUploadThumb({ type: 'image', src: e.target.result, name: file.name });
+        // Show big preview on left panel
+        showRoomImagePreview(e.target.result);
+      };
       reader.readAsDataURL(file);
     } else if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
       addUploadThumb({ type: 'pdf', src: null, name: file.name });
     }
   });
-  // reset so same file can be re-selected
   document.getElementById('fileInput').value = '';
+}
+
+function showRoomImagePreview(src) {
+  document.getElementById('p1UploadArea').classList.add('hidden');
+  document.getElementById('p1CanvasWrap').classList.add('hidden');
+  const preview = document.getElementById('p1ImagePreview');
+  document.getElementById('p1PreviewImg').src = src;
+  preview.classList.remove('hidden');
+}
+
+function clearRoomImage() {
+  state.uploadedFiles = [];
+  state.referencePhoto = null;
+  document.getElementById('p1ImagePreview').classList.add('hidden');
+  document.getElementById('p1UploadArea').classList.remove('hidden');
+  updateUploadBadge();
 }
 
 function handleDrop(e) {
