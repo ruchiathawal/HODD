@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HODD — AI Interior Design</title>
+  <title>HODD — Your Room, Reimagined.</title>
   <link rel="stylesheet" href="style.css?v=12" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet" />
@@ -30,8 +30,9 @@
 ══════════════════════════════════════════════════════════════ -->
 <section id="landing" class="screen active">
   <nav class="nav">
-    <div class="logo">HODD<span class="logo-dot">.</span></div>
-    <div class="nav-tagline">AI Interior Design</div>
+    <div class="logo">
+      <img src="logo.svg" alt="HODD" class="logo-img" />
+    </div>
     <div class="nav-right" id="navRight">
       <!-- Populated by firebase.js updateAuthUI() -->
       <button class="nav-badge" onclick="openAuthModal('signin')" style="cursor:pointer">Sign In</button>
@@ -40,7 +41,7 @@
   </nav>
 
   <div class="hero">
-    <div class="hero-badge">✦ Powered by AI · Designed for Indian Homes</div>
+    <div class="hero-badge">✦ Powered by AI · Designed for Indian Homes · Your room, reimagined.</div>
     <h1 class="hero-title">Your dream room,<br /><em>designed in minutes.</em></h1>
     <p class="hero-sub">From a phone photo to 5 photorealistic renders — HODD handles inspiration, visualization, execution planning, and procurement in one guided flow.</p>
     <button class="btn-primary hero-cta" onclick="startFlow()">

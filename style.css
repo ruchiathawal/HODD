@@ -48,8 +48,9 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); background-image
   position: sticky; top: 0;
   background: rgba(237,242,235,.92); backdrop-filter: blur(20px); z-index: 100;
 }
-.logo { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; }
-.logo-dot { color: var(--accent); }
+.logo { display: flex; align-items: center; }
+.logo-img { height: 36px; width: auto; display: block; }
+@media(max-width:640px){ .logo-img { height: 28px; } }
 .nav-tagline { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .12em; border-left: 1px solid var(--border); padding-left: 1rem; }
 .nav-right { margin-left: auto; display: flex; align-items: center; gap: .6rem; }
 .nav-badge { font-size: .75rem; background: var(--surface2); border: 1px solid var(--border); padding: .3rem .7rem; border-radius: 100px; color: var(--muted2); }

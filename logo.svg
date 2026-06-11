@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 100" width="320" height="100">
+  <defs>
+    <linearGradient id="markGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c9923a"/>
+      <stop offset="100%" stop-color="#a05848"/>
+    </linearGradient>
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1e1208"/>
+      <stop offset="100%" stop-color="#3a2010"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ── Mark: abstract room / doorway ── -->
+  <!-- Outer arch = doorway into a designed room -->
+  <rect x="10" y="18" width="52" height="64" rx="26" fill="none" stroke="url(#markGrad)" stroke-width="3.5"/>
+  <!-- Inner floor line -->
+  <line x1="10" y1="68" x2="62" y2="68" stroke="url(#markGrad)" stroke-width="2" opacity=".4"/>
+  <!-- Minimal sofa silhouette -->
+  <rect x="19" y="57" width="34" height="9" rx="4.5" fill="url(#markGrad)" opacity=".85"/>
+  <rect x="19" y="52" width="8"  height="14" rx="4" fill="url(#markGrad)" opacity=".7"/>
+  <rect x="45" y="52" width="8"  height="14" rx="4" fill="url(#markGrad)" opacity=".7"/>
+  <!-- Accent dot — like a pendant light -->
+  <circle cx="36" cy="31" r="3.2" fill="url(#markGrad)" opacity=".6"/>
+  <line x1="36" y1="18" x2="36" y2="28" stroke="url(#markGrad)" stroke-width="1.5" opacity=".4"/>
+
+  <!-- ── Wordmark: HODD ── -->
+  <text
+    x="84" y="67"
+    font-family="'Playfair Display', Georgia, serif"
+    font-size="44"
+    font-weight="700"
+    fill="url(#textGrad)"
+    letter-spacing="-1">HODD</text>
+
+  <!-- Accent dot after HODD -->
+  <circle cx="271" cy="60" r="4.5" fill="url(#markGrad)"/>
+
+  <!-- ── Tagline ── -->
+  <text
+    x="84" y="84"
+    font-family="'Inter', Arial, sans-serif"
+    font-size="11.5"
+    font-weight="400"
+    fill="#7a6a58"
+    letter-spacing="2.5">YOUR ROOM, REIMAGINED.</text>
+</svg>
