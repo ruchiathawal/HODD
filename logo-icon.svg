@@ -1,23 +1,61 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80">
   <defs>
     <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#c9923a"/>
+      <stop offset="0%" stop-color="#d4a050"/>
+      <stop offset="50%" stop-color="#c9923a"/>
       <stop offset="100%" stop-color="#a05848"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#d4a050" stop-opacity=".35"/>
+      <stop offset="100%" stop-color="#a05848" stop-opacity=".15"/>
     </linearGradient>
   </defs>
 
-  <!-- Background pill -->
-  <rect width="80" height="80" rx="20" fill="#1e1208"/>
+  <!-- Background -->
+  <rect width="80" height="80" rx="18" fill="#16100a"/>
 
-  <!-- Arch / doorway mark (white version on dark bg) -->
-  <rect x="14" y="14" width="52" height="52" rx="26" fill="none" stroke="url(#g1)" stroke-width="3"/>
-  <!-- Floor line -->
-  <line x1="14" y1="54" x2="66" y2="54" stroke="url(#g1)" stroke-width="1.8" opacity=".4"/>
-  <!-- Sofa -->
-  <rect x="22" y="45" width="36" height="8" rx="4" fill="url(#g1)" opacity=".9"/>
-  <rect x="22" y="41" width="7" height="12" rx="3.5" fill="url(#g1)" opacity=".75"/>
-  <rect x="51" y="41" width="7" height="12" rx="3.5" fill="url(#g1)" opacity=".75"/>
-  <!-- Pendant dot -->
-  <circle cx="40" cy="26" r="2.8" fill="url(#g1)" opacity=".7"/>
-  <line x1="40" y1="14" x2="40" y2="23.2" stroke="url(#g1)" stroke-width="1.4" opacity=".4"/>
+  <!-- Subtle outer ring — compass / design wheel -->
+  <circle cx="40" cy="40" r="33" fill="none" stroke="url(#g1)" stroke-width=".8" opacity=".25"/>
+
+  <!-- Cardinal compass ticks — N S E W — end-to-end planning metaphor -->
+  <line x1="40" y1="5"  x2="40" y2="11" stroke="url(#g1)" stroke-width="1.6" stroke-linecap="round" opacity=".55"/>
+  <line x1="40" y1="69" x2="40" y2="75" stroke="url(#g1)" stroke-width="1.6" stroke-linecap="round" opacity=".55"/>
+  <line x1="5"  y1="40" x2="11" y2="40" stroke="url(#g1)" stroke-width="1.6" stroke-linecap="round" opacity=".55"/>
+  <line x1="69" y1="40" x2="75" y2="40" stroke="url(#g1)" stroke-width="1.6" stroke-linecap="round" opacity=".55"/>
+
+  <!-- ─── Floor-plan room (top-down view) ─── -->
+  <!-- Outer wall -->
+  <rect x="18" y="20" width="44" height="40" rx="3" fill="url(#g2)" stroke="url(#g1)" stroke-width="2"/>
+
+  <!-- Door gap (open bottom-right corner) -->
+  <line x1="18" y1="20" x2="62" y2="20" stroke="url(#g1)" stroke-width="2" opacity=".0"/>
+  <!-- partial wall break = door -->
+  <rect x="48" y="58" width="14" height="2" rx="1" fill="#16100a"/>
+  <!-- door arc -->
+  <path d="M48 60 Q48 52 56 52" fill="none" stroke="url(#g1)" stroke-width="1.2" stroke-dasharray="1.5 2" opacity=".5"/>
+
+  <!-- Sofa (top view) — the centrepiece -->
+  <rect x="23" y="42" width="22" height="9" rx="3" fill="url(#g1)" opacity=".9"/>
+  <!-- sofa back -->
+  <rect x="23" y="39" width="22" height="5"  rx="2.5" fill="url(#g1)" opacity=".6"/>
+  <!-- sofa arms -->
+  <rect x="21" y="39" width="4" height="12" rx="2" fill="url(#g1)" opacity=".55"/>
+  <rect x="43" y="39" width="4" height="12" rx="2" fill="url(#g1)" opacity=".55"/>
+
+  <!-- Coffee table -->
+  <rect x="30" y="31" width="12" height="7" rx="2" fill="url(#g1)" opacity=".3"/>
+
+  <!-- Corner plant (circle) -->
+  <circle cx="56" cy="26" r="4.5" fill="url(#g1)" opacity=".45"/>
+  <circle cx="56" cy="26" r="2"   fill="url(#g1)" opacity=".7"/>
+
+  <!-- Pendant / ceiling light — small AI spark star -->
+  <circle cx="35" cy="28" r="1.8" fill="url(#g1)" opacity=".9"/>
+  <!-- spark rays -->
+  <line x1="35" y1="24" x2="35" y2="26" stroke="url(#g1)" stroke-width="1.2" stroke-linecap="round" opacity=".7"/>
+  <line x1="35" y1="30" x2="35" y2="32" stroke="url(#g1)" stroke-width="1.2" stroke-linecap="round" opacity=".7"/>
+  <line x1="31" y1="28" x2="33" y2="28" stroke="url(#g1)" stroke-width="1.2" stroke-linecap="round" opacity=".7"/>
+  <line x1="37" y1="28" x2="39" y2="28" stroke="url(#g1)" stroke-width="1.2" stroke-linecap="round" opacity=".7"/>
+  <line x1="32.3" y1="25.3" x2="33.7" y2="26.7" stroke="url(#g1)" stroke-width="1" stroke-linecap="round" opacity=".5"/>
+  <line x1="36.3" y1="29.3" x2="37.7" y2="30.7" stroke="url(#g1)" stroke-width="1" stroke-linecap="round" opacity=".5"/>
 </svg>
