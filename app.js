@@ -1116,102 +1116,134 @@ function renderDesignCards() {
   }
 
   const rankedDesigns = getAIRecommendedDesigns();
+
+  // Set initial live preview to top pick (or previously selected)
+  const initDesign = state.selectedDesign
+    ? rankedDesigns.find(d => d.id === state.selectedDesign.id) || rankedDesigns[0]
+    : rankedDesigns[0];
+  p2SetPreview(initDesign, true);
+
   rankedDesigns.forEach((d, i) => {
     const card = document.createElement('div');
     const isTopPick = i === 0;
     const isFav = state.favDesigns.has(d.id);
     const isCompared = state.compareDesigns.has(d.id);
-    const isSelected = state.selectedDesign?.id === d.id;
+    const isSelected = state.selectedDesign?.id === d.id || (i === 0 && !state.selectedDesign);
     const theme = STYLE_THEMES[d.styleKey] || STYLE_THEMES['japandi'];
-    card.className = `design-card2${isFav ? ' favourited' : ''}${isCompared ? ' compared' : ''}${isTopPick ? ' ai-top-pick' : ''}${isSelected ? ' is-selected' : ''}`;
-    card.style.animationDelay = `${i * 0.07}s`;
-
-    // Palette swatches
-    const palette = theme.palette || ['#d4c5b0','#8b7d6b','#5a4e3f','#2d2820'];
-    const swatches = palette.slice(0,5).map(c => `<span class="dc-swatch" style="background:${c}"></span>`).join('');
-
-    // Mood tags
-    const moodTags = (d.mood || []).map(m => `<span class="dc-mood-tag">${m}</span>`).join('');
-
-    // Material tags
-    const matTags = (d.materials || []).map(m => `<span class="dc-mat-tag">${m}</span>`).join('');
-
-    // Image: use design-specific img first, fall back to theme img
     const imgSrc = d.img || theme.img || '';
 
+    // Palette
+    const palette = theme.palette || ['#d4c5b0','#8b7d6b','#5a4e3f','#2d2820'];
+    const swatches = palette.slice(0,4).map(c =>
+      `<span class="dcc-swatch" style="background:${c}" title="${c}"></span>`).join('');
+
+    card.className = `design-card-compact${isSelected ? ' dcc-active' : ''}${isFav ? ' favourited' : ''}${isTopPick ? ' ai-top-pick' : ''}`;
+    card.dataset.designId = d.id;
+    card.style.animationDelay = `${i * 0.06}s`;
+
+    // Hover → live preview
+    card.addEventListener('mouseenter', () => p2SetPreview(d, false));
+
     card.innerHTML = `
-      <!-- ── Photo + AI score hero ── -->
-      <div class="dc-photo-wrap">
-        <img class="dc-photo" src="${imgSrc}" alt="${d.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" />
-        <div class="dc-photo-fallback" style="display:none">
-          <svg viewBox="0 0 500 280" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">${theme.scene(500,280)}</svg>
-        </div>
-        <!-- Top action row -->
-        <div class="dc-photo-top">
-          <div class="dc-badges-row">
-            ${isTopPick ? '<span class="d-badge badge-ai">✦ AI Top Pick</span>' : ''}
-            ${d.badges.map((b,idx)=>`<span class="d-badge ${b}">${d.badgeText[idx]}</span>`).join('')}
-          </div>
-          <div class="dc-actions">
-            <button class="fav-btn${isFav ? ' active' : ''}" onclick="toggleFav(${d.id})" title="Save">♡</button>
-            <button class="compare-check${isCompared ? ' active' : ''}" onclick="toggleCompareItem(${d.id})" title="Compare">⇄</button>
-          </div>
-        </div>
-        <!-- AI match score overlay (bottom of photo) -->
-        <div class="dc-match-bar">
-          <div class="dc-match-fill" style="width:${d.aiScore}%"></div>
-          <span class="dc-match-label">✦ ${d.aiScore}% AI match for your space</span>
-        </div>
+      <div class="dcc-thumb-wrap">
+        <img class="dcc-thumb" src="${imgSrc}" alt="${d.name}" loading="lazy"
+          onerror="this.style.display='none'" />
+        <div class="dcc-match-badge">✦ ${d.aiScore}%</div>
       </div>
-
-      <!-- ── Info panel ── -->
-      <div class="dc-info">
-        <!-- Name + mood -->
-        <div class="dc-name-row">
-          <div class="dc-name">${d.name}</div>
-          <div class="dc-mood">${moodTags}</div>
-        </div>
-
-        <!-- Description -->
-        <p class="dc-desc">${d.desc}</p>
-
-        <!-- Palette -->
-        <div class="dc-palette-row">
-          <span class="dc-section-label">Palette</span>
-          <div class="dc-swatches">${swatches}</div>
-        </div>
-
-        <!-- Materials -->
-        <div class="dc-materials-row">
-          <span class="dc-section-label">Key Materials</span>
-          <div class="dc-mats">${matTags}</div>
-        </div>
-
-        <!-- Cost + Timeline -->
-        <div class="dc-meta-row">
-          <div class="dc-meta-item">
-            <div class="dc-meta-label">Est. Cost</div>
-            <div class="dc-meta-val">${d.cost}</div>
-          </div>
-          <div class="dc-meta-divider"></div>
-          <div class="dc-meta-item">
-            <div class="dc-meta-label">Timeline</div>
-            <div class="dc-meta-val">${d.time}</div>
+      <div class="dcc-body">
+        <div class="dcc-top">
+          <div class="dcc-name">${d.name}</div>
+          <div class="dcc-actions">
+            <button class="fav-btn${isFav ? ' active' : ''}" onclick="event.stopPropagation();toggleFav(${d.id})" title="Save">♡</button>
           </div>
         </div>
-
-        <!-- AI insight -->
-        <div class="dc-insight">💡 ${d.insight}</div>
-
-        <!-- CTA -->
-        <button class="dc-select-btn${isSelected ? ' selected' : ''}" onclick="selectDesign(${d.id})">
-          ${isSelected ? '✓ Design Selected' : 'Select This Design →'}
-        </button>
+        <div class="dcc-swatches">${swatches}</div>
+        <div class="dcc-meta">${d.cost} &nbsp;·&nbsp; ${d.time}</div>
+        ${isTopPick ? '<div class="dcc-ai-tag">✦ AI Top Pick</div>' : ''}
       </div>`;
+
+    // Click → select + lock preview
+    card.addEventListener('click', () => {
+      selectDesign(d.id);
+      p2SetPreview(d, true);
+    });
 
     grid.appendChild(card);
   });
   updateCompareBtn();
+}
+
+/* ── Live preview updater ─────────────────────────────────────── */
+let _p2ActiveImgSlot = 'a'; // crossfade between two img elements
+
+function p2SetPreview(d, lock = false) {
+  if (!d) return;
+  const theme = STYLE_THEMES[d.styleKey] || STYLE_THEMES['japandi'];
+  const imgSrc = d.img || theme.img || '';
+  const palette = theme.palette || [];
+
+  // Crossfade image
+  const imgA = document.getElementById('p2ImgA');
+  const imgB = document.getElementById('p2ImgB');
+  if (imgA && imgB) {
+    const next = _p2ActiveImgSlot === 'a' ? imgB : imgA;
+    const curr = _p2ActiveImgSlot === 'a' ? imgA : imgB;
+    next.src = imgSrc;
+    next.onload = () => {
+      next.classList.add('active');
+      curr.classList.remove('active');
+      _p2ActiveImgSlot = _p2ActiveImgSlot === 'a' ? 'b' : 'a';
+    };
+    // If already cached (onload won't fire again)
+    if (next.complete && next.naturalWidth) {
+      next.classList.add('active');
+      curr.classList.remove('active');
+      _p2ActiveImgSlot = _p2ActiveImgSlot === 'a' ? 'b' : 'a';
+    }
+  }
+
+  // Overlay text
+  const name = document.getElementById('p2OvName');
+  const mood = document.getElementById('p2OvMood');
+  const match = document.getElementById('p2OvMatch');
+  const topTag = document.getElementById('p2TopTag');
+  if (name)  name.textContent = d.name;
+  if (mood)  mood.innerHTML = (d.mood||[]).map(m=>`<span class="p2-mood-pill">${m}</span>`).join('');
+  if (match) match.innerHTML = `<span class="p2-match-ring">${d.aiScore}%</span> AI match for your space`;
+  if (topTag) topTag.innerHTML = d.badges.includes('badge-ai') || lock
+    ? `<span class="d-badge badge-ai">✦ ${lock ? 'Selected' : 'AI Top Pick'}</span>` : '';
+
+  // Palette strip
+  const ps = document.getElementById('p2PaletteStrip');
+  if (ps) ps.innerHTML = `
+    <span class="p2-strip-label">Palette</span>
+    <div class="p2-swatches">${palette.slice(0,5).map(c=>`<span class="p2-swatch" style="background:${c}" title="${c}"></span>`).join('')}</div>
+    <span class="p2-strip-label" style="margin-left:.75rem">Materials</span>
+    <div class="p2-mats">${(d.materials||[]).map(m=>`<span class="p2-mat">${m}</span>`).join('')}</div>`;
+
+  // Description
+  const desc = document.getElementById('p2Desc');
+  if (desc) desc.textContent = d.desc || '';
+
+  // Update confirm button
+  const btn = document.getElementById('p2ConfirmBtn');
+  if (btn) {
+    btn.textContent = lock ? '✓ Design Locked In →' : `Select "${d.name}" →`;
+    btn.dataset.pendingId = d.id;
+    btn.classList.toggle('locked', lock);
+  }
+
+  // Highlight active card
+  document.querySelectorAll('.design-card-compact').forEach(c => {
+    c.classList.toggle('dcc-active', parseInt(c.dataset.designId) === d.id);
+  });
+}
+
+function confirmDesignAndNext() {
+  const btn = document.getElementById('p2ConfirmBtn');
+  const id = parseInt(btn?.dataset.pendingId);
+  if (id) selectDesign(id);
+  goPhase3();
 }
 
 function toggleFav(id) {

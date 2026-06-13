@@ -231,7 +231,60 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); background-image
 .tool-btn[disabled] { opacity: .4; cursor: not-allowed; }
 .tool-btn.active-tool { background: rgba(201,146,58,.2); border-color: var(--accent); color: #7a4a10; }
 
+/* In p2 compact mode, grid = single column of compact cards */
+.p2-cards-col .designs-grid { display: flex; flex-direction: column; gap: .65rem; }
+
+/* ── Phase 2 two-column live layout ─────────────────────────── */
+.p2-phase { max-width: 1300px; }
+.p2-body { display: grid; grid-template-columns: 1fr 420px; gap: 2rem; align-items: start; }
+.p2-preview-col { position: sticky; top: 80px; display: flex; flex-direction: column; gap: .75rem; }
+.p2-cards-col { display: flex; flex-direction: column; gap: .75rem; max-height: 82vh; overflow-y: auto; padding-right: .25rem; scrollbar-width: thin; }
+.p2-cards-toolbar { display: flex; justify-content: space-between; align-items: center; padding: .3rem 0; }
 .designs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px,1fr)); gap: 1.5rem; }
+
+/* Live preview frame */
+.p2-preview-frame { position: relative; border-radius: 18px; overflow: hidden; background: var(--surface2); aspect-ratio: 4/3; }
+.p2-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .45s ease; }
+.p2-img.active { opacity: 1; }
+.p2-photo-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 1.5rem 1.25rem 1.1rem; background: linear-gradient(to top, rgba(16,10,4,.88) 0%, rgba(16,10,4,.3) 60%, transparent 100%); }
+.p2-ov-name { font-family: 'DM Serif Display', serif; font-size: 1.5rem; font-weight: 400; color: #fff; line-height: 1.15; margin-bottom: .4rem; transition: opacity .3s; }
+.p2-ov-mood { display: flex; gap: .35rem; flex-wrap: wrap; margin-bottom: .5rem; }
+.p2-mood-pill { font-size: .62rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #d4a050; background: rgba(201,146,58,.18); border: 1px solid rgba(201,146,58,.35); padding: .18rem .5rem; border-radius: 100px; }
+.p2-ov-match { font-size: .78rem; color: rgba(255,255,255,.7); display: flex; align-items: center; gap: .5rem; }
+.p2-match-ring { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; border: 2px solid #d4a050; color: #d4a050; font-size: .78rem; font-weight: 800; }
+.p2-top-tag { position: absolute; top: .85rem; left: .85rem; }
+
+/* Palette + materials strip */
+.p2-palette-strip { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: .6rem .9rem; }
+.p2-strip-label { font-size: .6rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.p2-swatches { display: flex; gap: .3rem; }
+.p2-swatch { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.15); flex-shrink: 0; cursor: pointer; transition: transform .2s; }
+.p2-swatch:hover { transform: scale(1.2); }
+.p2-mats { display: flex; flex-wrap: wrap; gap: .3rem; }
+.p2-mat { font-size: .68rem; font-weight: 500; color: var(--muted2); background: var(--surface2); border: 1px solid var(--border); padding: .2rem .5rem; border-radius: 6px; }
+.p2-desc { font-size: .84rem; color: var(--muted); line-height: 1.65; margin: 0; }
+.p2-confirm-btn { width: 100%; }
+.p2-confirm-btn.locked { background: linear-gradient(135deg,#3a8a50,#2d6e3e); }
+
+/* ── Compact design card (right column) ─────────────────────── */
+.design-card-compact { display: flex; gap: .75rem; background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; overflow: hidden; cursor: pointer; transition: var(--transition); animation: fadeSlide .3s ease both; position: relative; }
+.design-card-compact:hover { border-color: rgba(201,146,58,.4); background: var(--surface2); }
+.design-card-compact.dcc-active { border-color: var(--accent); background: var(--surface2); box-shadow: 0 0 0 3px rgba(201,146,58,.15); }
+.design-card-compact.ai-top-pick { border-color: rgba(201,146,58,.45); }
+.dcc-thumb-wrap { position: relative; width: 96px; flex-shrink: 0; }
+.dcc-thumb { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dcc-match-badge { position: absolute; bottom: .3rem; left: .3rem; font-size: .6rem; font-weight: 800; color: #d4a050; background: rgba(22,16,10,.8); padding: .15rem .4rem; border-radius: 5px; letter-spacing: .04em; }
+.dcc-body { flex: 1; padding: .6rem .75rem .65rem 0; display: flex; flex-direction: column; gap: .3rem; min-width: 0; }
+.dcc-top { display: flex; justify-content: space-between; align-items: flex-start; }
+.dcc-name { font-family: 'DM Serif Display', serif; font-size: .95rem; font-weight: 400; color: var(--text); line-height: 1.2; }
+.dcc-swatches { display: flex; gap: .25rem; }
+.dcc-swatch { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(255,255,255,.12); }
+.dcc-meta { font-size: .72rem; color: var(--muted); }
+.dcc-ai-tag { font-size: .6rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+
+@media(max-width:1024px) { .p2-body { grid-template-columns: 1fr 360px; } }
+@media(max-width:860px) { .p2-body { grid-template-columns: 1fr; } .p2-preview-col { position: static; } .p2-cards-col { max-height: none; } .designs-grid { grid-template-columns: repeat(2, 1fr); } .dc-photo-wrap { height: 200px; } }
+@media(max-width:640px) { .designs-grid { grid-template-columns: 1fr; } }
 
 /* ── New design card (dc-*) ──────────────────────────────────── */
 .design-card2 { background: var(--surface); border: 1.5px solid var(--border); border-radius: 18px; overflow: hidden; transition: var(--transition); animation: fadeSlide .35s ease both; position: relative; display: flex; flex-direction: column; }

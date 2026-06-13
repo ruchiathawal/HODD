@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>HODD — Dream it. Design it. Own it.</title>
-  <link rel="stylesheet" href="style.css?v=15" />
+  <link rel="stylesheet" href="style.css?v=16" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
 
@@ -356,26 +356,64 @@
   <!-- ──────────────────────────────────────────────────────────
        PHASE 2 · DESIGN ENGINE
   ────────────────────────────────────────────────────────── -->
-  <div class="phase hidden" id="phase2">
+  <div class="phase p2-phase hidden" id="phase2">
     <div class="phase-header">
       <div class="phase-badge">Step 2 · Revisualize</div>
       <h2>See your room, <em>reimagined</em></h2>
-      <p>5 AI-rendered styles, tailored to your space. Pick the ones that feel like you.</p>
+      <p>Hover any style to preview — select the one that feels like you.</p>
     </div>
 
-    <div class="design-toolbar">
-      <div class="toolbar-left">
-        <span class="fav-count" id="favCount">0 saved</span>
-        <span class="compare-hint" id="compareHint">Select 2–3 designs to compare</span>
-      </div>
-      <div class="toolbar-right">
-        <button class="tool-btn" id="compareBtn" onclick="toggleCompare()" disabled>⇄ Compare</button>
-        <button class="tool-btn" onclick="exportPDF()">↓ Export PDF</button>
-      </div>
-    </div>
+    <!-- AI banner injected here by JS -->
 
-    <div class="designs-grid" id="designsGrid">
-      <!-- populated by JS -->
+    <!-- Two-column live layout -->
+    <div class="p2-body">
+
+      <!-- LEFT · Live preview panel -->
+      <div class="p2-preview-col">
+        <div class="p2-preview-frame" id="p2PreviewFrame">
+          <!-- Crossfade image layers -->
+          <img class="p2-img p2-img-a active" id="p2ImgA" src="" alt="" />
+          <img class="p2-img p2-img-b" id="p2ImgB" src="" alt="" />
+
+          <!-- Gradient overlay bottom -->
+          <div class="p2-photo-overlay">
+            <div class="p2-ov-name" id="p2OvName"></div>
+            <div class="p2-ov-mood" id="p2OvMood"></div>
+            <div class="p2-ov-match" id="p2OvMatch"></div>
+          </div>
+
+          <!-- Top-left: AI tag -->
+          <div class="p2-top-tag" id="p2TopTag"></div>
+        </div>
+
+        <!-- Palette + materials strip below image -->
+        <div class="p2-palette-strip" id="p2PaletteStrip"></div>
+
+        <!-- Materials strip -->
+        <div class="p2-mat-strip" id="p2MatStrip"></div>
+
+        <!-- Description -->
+        <p class="p2-desc" id="p2Desc"></p>
+
+        <!-- Confirm CTA -->
+        <button class="btn-primary p2-confirm-btn" id="p2ConfirmBtn" onclick="confirmDesignAndNext()">
+          Select This Design →
+        </button>
+      </div>
+
+      <!-- RIGHT · Design option cards -->
+      <div class="p2-cards-col">
+        <div class="p2-cards-toolbar">
+          <span class="fav-count" id="favCount">0 saved</span>
+          <div style="display:flex;gap:.5rem">
+            <button class="tool-btn" id="compareBtn" onclick="toggleCompare()" disabled>⇄ Compare</button>
+            <button class="tool-btn" onclick="exportPDF()">↓ PDF</button>
+          </div>
+        </div>
+        <div class="designs-grid" id="designsGrid">
+          <!-- populated by JS -->
+        </div>
+      </div>
     </div>
 
     <!-- Compare overlay -->
@@ -386,10 +424,6 @@
       </div>
       <div class="compare-panels" id="comparePanels"></div>
     </div>
-
-    <button class="btn-primary phase-next" onclick="goPhase3()">
-      Customise Selected Design →
-    </button>
   </div>
 
   <!-- ──────────────────────────────────────────────────────────
