@@ -127,30 +127,45 @@ function drawRoomLayout() {
     ctx.beginPath(); ctx.moveTo(rx, y); ctx.lineTo(rx + rw, y); ctx.stroke();
   }
 
-  // Room fill & outline path based on shape
-  ctx.beginPath();
-  if (shape === 'l-shape') {
-    const mx = rx + rw * 0.55, my = ry + rh * 0.45;
-    ctx.moveTo(rx, ry); ctx.lineTo(mx, ry); ctx.lineTo(mx, my);
-    ctx.lineTo(rx + rw, my); ctx.lineTo(rx + rw, ry + rh);
-    ctx.lineTo(rx, ry + rh); ctx.closePath();
-  } else if (shape === 'u-shape') {
-    const wa = rw * 0.28, wb = rw * 0.72, mh = rh * 0.5;
-    ctx.moveTo(rx, ry); ctx.lineTo(rx + wa, ry); ctx.lineTo(rx + wa, ry + mh);
-    ctx.lineTo(rx + wb, ry + mh); ctx.lineTo(rx + wb, ry);
-    ctx.lineTo(rx + rw, ry); ctx.lineTo(rx + rw, ry + rh);
-    ctx.lineTo(rx, ry + rh); ctx.closePath();
-  } else {
-    ctx.rect(rx, ry, rw, rh);
+  // ── Build room path (reusable for fill, stroke, clip) ──────────
+  function buildRoomPath() {
+    ctx.beginPath();
+    if (shape === 'l-shape') {
+      // Top-left block + bottom-right extension
+      const mx = rx + rw * 0.55, my = ry + rh * 0.45;
+      ctx.moveTo(rx, ry); ctx.lineTo(mx, ry); ctx.lineTo(mx, my);
+      ctx.lineTo(rx + rw, my); ctx.lineTo(rx + rw, ry + rh);
+      ctx.lineTo(rx, ry + rh); ctx.closePath();
+    } else if (shape === 'u-shape') {
+      const wa = rw * 0.28, wb = rw * 0.72, mh = rh * 0.5;
+      ctx.moveTo(rx, ry); ctx.lineTo(rx + wa, ry); ctx.lineTo(rx + wa, ry + mh);
+      ctx.lineTo(rx + wb, ry + mh); ctx.lineTo(rx + wb, ry);
+      ctx.lineTo(rx + rw, ry); ctx.lineTo(rx + rw, ry + rh);
+      ctx.lineTo(rx, ry + rh); ctx.closePath();
+    } else {
+      ctx.rect(rx, ry, rw, rh);
+    }
   }
 
+  // Fill
+  buildRoomPath();
   ctx.fillStyle = 'rgba(201,146,58,.07)';
   ctx.fill();
+
+  // ── Furniture clipped to room shape ─────────────────────────
+  ctx.save();
+  buildRoomPath();
+  ctx.clip();
+  drawFurniture(ctx, rx, ry, rw, rh, shape, state.room);
+  ctx.restore();
+
+  // Room outline (drawn after clip restore so it stays sharp)
+  buildRoomPath();
   ctx.strokeStyle = '#c9923a';
   ctx.lineWidth = 2.5;
   ctx.stroke();
 
-  // Door arc (bottom-right)
+  // Door arc — bottom-right corner of the room
   const doorSize = Math.min(scale * 3, rw * 0.22);
   ctx.beginPath();
   ctx.arc(rx + rw, ry + rh, doorSize, Math.PI, Math.PI * 1.5);
@@ -159,7 +174,6 @@ function drawRoomLayout() {
   ctx.setLineDash([4, 4]);
   ctx.stroke();
   ctx.setLineDash([]);
-  // door gap on wall
   ctx.clearRect(rx + rw - doorSize - 1, ry + rh - 2.5, doorSize + 1, 5);
 
   // Dimension labels
@@ -167,9 +181,7 @@ function drawRoomLayout() {
   ctx.font = `bold ${Math.max(11, Math.min(14, scale * 0.7))}px Inter, sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  // top label (length)
   ctx.fillText(`${l} ft`, rx + rw / 2, ry - 18);
-  // left label (breadth) — rotated
   ctx.save();
   ctx.translate(rx - 20, ry + rh / 2);
   ctx.rotate(-Math.PI / 2);
@@ -179,96 +191,146 @@ function drawRoomLayout() {
   // Dimension tick marks
   ctx.strokeStyle = 'rgba(201,146,58,.5)';
   ctx.lineWidth = 1.2;
-  [[rx, ry - 10, rx, ry - 26], [rx + rw, ry - 10, rx + rw, ry - 26],
-   [rx - 10, ry, rx - 26, ry], [rx - 10, ry + rh, rx - 26, ry + rh]].forEach(([x1,y1,x2,y2]) => {
+  [[rx, ry-10, rx, ry-26],[rx+rw, ry-10, rx+rw, ry-26],
+   [rx-10, ry, rx-26, ry],[rx-10, ry+rh, rx-26, ry+rh]].forEach(([x1,y1,x2,y2]) => {
     ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
   });
-  ctx.beginPath(); ctx.moveTo(rx, ry - 18); ctx.lineTo(rx + rw, ry - 18); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(rx - 18, ry); ctx.lineTo(rx - 18, ry + rh); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(rx, ry-18); ctx.lineTo(rx+rw, ry-18); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(rx-18, ry); ctx.lineTo(rx-18, ry+rh); ctx.stroke();
 
-  // Pillars
+  // Pillars (also clipped to room via save/restore above — draw separately)
   if (state.pillars?.length) {
+    ctx.save();
+    buildRoomPath(); ctx.clip();
     state.pillars.forEach(p => {
       const pw = (p.w || 1.5) * scale, pd = (p.d || 1.5) * scale;
       let px = rx, py = ry;
       if (p.pos.includes('right')) px = rx + rw - pw;
       if (p.pos.includes('bottom')) py = ry + rh - pd;
-      if (p.pos === 'center') { px = rx + rw / 2 - pw / 2; py = ry + rh / 2 - pd / 2; }
-      if (p.pos === 'top-wall') { px = rx + rw / 2 - pw / 2; }
-      if (p.pos === 'bottom-wall') { px = rx + rw / 2 - pw / 2; py = ry + rh - pd; }
-      if (p.pos === 'left-wall') { py = ry + rh / 2 - pd / 2; }
-      if (p.pos === 'right-wall') { px = rx + rw - pw; py = ry + rh / 2 - pd / 2; }
-      ctx.fillStyle = 'rgba(201,146,58,.55)';
+      if (p.pos === 'center') { px = rx + rw/2 - pw/2; py = ry + rh/2 - pd/2; }
+      if (p.pos === 'top-wall') px = rx + rw/2 - pw/2;
+      if (p.pos === 'bottom-wall') { px = rx + rw/2 - pw/2; py = ry + rh - pd; }
+      if (p.pos === 'left-wall') py = ry + rh/2 - pd/2;
+      if (p.pos === 'right-wall') { px = rx + rw - pw; py = ry + rh/2 - pd/2; }
+      ctx.fillStyle = 'rgba(201,146,58,.6)';
       ctx.fillRect(px, py, pw, pd);
-      ctx.strokeStyle = '#c9923a';
-      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = '#c9923a'; ctx.lineWidth = 1.5;
       ctx.strokeRect(px, py, pw, pd);
-      // hatch pattern
-      ctx.strokeStyle = 'rgba(201,146,58,.3)';
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(201,146,58,.25)'; ctx.lineWidth = 1;
       for (let i = 0; i < pw + pd; i += 5) {
-        ctx.beginPath(); ctx.moveTo(px + Math.max(0,i-pd), py + Math.min(pd,i));
-        ctx.lineTo(px + Math.min(pw,i), py + Math.max(0,i-pw)); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(px + Math.max(0,i-pd), py + Math.min(pd,i));
+        ctx.lineTo(px + Math.min(pw,i), py + Math.max(0,i-pw));
+        ctx.stroke();
       }
     });
+    ctx.restore();
   }
 
-  // Furniture silhouettes (based on room type)
-  drawFurniture(ctx, rx, ry, rw, rh, state.room);
-
-  // Compass rose (top-right)
+  // Compass rose
   drawCompass(ctx, W - 26, 26, 14);
 }
 
-function drawFurniture(ctx, rx, ry, rw, rh, room) {
+function drawFurniture(ctx, rx, ry, rw, rh, shape, room) {
   ctx.save();
-  ctx.globalAlpha = 0.35;
+  ctx.globalAlpha = 0.38;
   const c = '#d4a050';
-  const cx = rx + rw / 2, cy = ry + rh / 2;
+
+  // ── Per-shape safe zone centers ──────────────────────────────
+  // For irregular shapes we place furniture in the guaranteed-inside zones.
+  // The clip set by the caller prevents any overflow.
+  let zones;
+  if (shape === 'l-shape') {
+    // Left column (always inside): cx ≈ rx + rw*0.275
+    // Bottom-right zone: cx ≈ rx + rw*0.78, cy ≈ ry + rh*0.72
+    zones = {
+      main:  { cx: rx + rw * 0.275, cy: ry + rh * 0.55 },
+      table: { cx: rx + rw * 0.275, cy: ry + rh * 0.35 },
+      alt:   { cx: rx + rw * 0.78,  cy: ry + rh * 0.72 },
+      wall:  { top: ry + 8, left: rx + 8, right: rx + rw * 0.52, bottom: ry + rh - 8 },
+    };
+  } else if (shape === 'u-shape') {
+    // Bottom connecting bar is safest for main furniture
+    // U: left col (0→28%), right col (72→100%), bottom bar (28%→72%, 50%→100%)
+    zones = {
+      main:  { cx: rx + rw * 0.5,  cy: ry + rh * 0.75 },
+      table: { cx: rx + rw * 0.5,  cy: ry + rh * 0.6  },
+      alt:   { cx: rx + rw * 0.14, cy: ry + rh * 0.35 },
+      wall:  { top: ry + rh*0.52, left: rx + rw*0.3, right: rx + rw*0.7, bottom: ry + rh - 8 },
+    };
+  } else {
+    // Rectangle / square — full center
+    zones = {
+      main:  { cx: rx + rw * 0.5,  cy: ry + rh * 0.62 },
+      table: { cx: rx + rw * 0.5,  cy: ry + rh * 0.42 },
+      alt:   { cx: rx + rw * 0.82, cy: ry + rh * 0.2  },
+      wall:  { top: ry + 8, left: rx + 8, right: rx + rw - 8, bottom: ry + rh - 8 },
+    };
+  }
+
+  const { main, table, alt, wall } = zones;
 
   if (room === 'bedroom') {
-    // Bed (top-center)
-    const bw = Math.min(rw * 0.5, 90), bh = Math.min(rh * 0.45, 75);
-    roundRect(ctx, cx - bw/2, ry + rh*0.1, bw, bh, 5, c);
-    // headboard
-    ctx.fillStyle = c; ctx.fillRect(cx - bw/2, ry + rh*0.1, bw, 8);
-    // Side tables
-    roundRect(ctx, cx - bw/2 - 18, ry + rh*0.1 + 4, 14, 14, 3, c);
-    roundRect(ctx, cx + bw/2 + 4, ry + rh*0.1 + 4, 14, 14, 3, c);
+    const bw = Math.min(rw * 0.48, 95), bh = Math.min(rh * 0.42, 75);
+    // Bed centred on main zone, pushed toward top
+    const bx = main.cx - bw/2, by = ry + (main.cy - ry) * 0.3;
+    roundRect(ctx, bx, by, bw, bh, 6, c);
+    ctx.fillStyle = c; ctx.globalAlpha = 0.55;
+    ctx.fillRect(bx, by, bw, 9); // headboard
+    ctx.globalAlpha = 0.38;
+    roundRect(ctx, bx - 16, by + 4, 13, 13, 3, c); // side table L
+    roundRect(ctx, bx + bw + 3, by + 4, 13, 13, 3, c); // side table R
+    // Wardrobe along wall
+    ctx.fillStyle = c; ctx.fillRect(wall.left, wall.bottom - 22, Math.min(rw*0.35, 60), 20);
+
   } else if (room === 'dining') {
-    // Round table
-    ctx.beginPath(); ctx.arc(cx, cy, Math.min(rw,rh)*0.18, 0, Math.PI*2);
+    const tr = Math.min(rw, rh) * 0.16;
+    ctx.beginPath(); ctx.arc(main.cx, main.cy, tr, 0, Math.PI*2);
     ctx.fillStyle = c; ctx.fill();
-    // Chairs (4)
     for (let a = 0; a < 4; a++) {
-      const ang = a * Math.PI/2, r = Math.min(rw,rh)*0.28;
-      roundRect(ctx, cx + Math.cos(ang)*r - 8, cy + Math.sin(ang)*r - 8, 16, 16, 4, c);
+      const ang = a * Math.PI/2, cr = tr * 1.75;
+      roundRect(ctx, main.cx + Math.cos(ang)*cr - 9, main.cy + Math.sin(ang)*cr - 9, 18, 18, 4, c);
     }
+
   } else if (room === 'kitchen') {
-    // Counter along top wall
-    ctx.fillStyle = c; ctx.fillRect(rx + 6, ry + 6, rw - 12, 18);
-    ctx.fillRect(rx + 6, ry + 6, 18, rh * 0.45);
+    // L-shaped counter hugging two walls (top + left) — always safe
+    ctx.fillStyle = c;
+    ctx.fillRect(wall.left, wall.top, Math.min(rw * 0.7, wall.right - wall.left), 18); // top counter
+    ctx.fillRect(wall.left, wall.top, 18, Math.min(rh * 0.5, wall.bottom - wall.top)); // left counter
+    // Island in main zone
+    roundRect(ctx, main.cx - 22, main.cy - 14, 44, 28, 4, c);
+
   } else if (room === 'office' || room === 'workoffice') {
-    // Desk
-    roundRect(ctx, cx - 45, ry + rh*0.25, 90, 40, 4, c);
-    // Chair
-    ctx.beginPath(); ctx.arc(cx, ry + rh*0.25 + 62, 16, 0, Math.PI*2);
+    const dw = Math.min(rw * 0.52, 95), dh = 36;
+    // Desk against top wall of main zone
+    roundRect(ctx, main.cx - dw/2, ry + (main.cy - ry)*0.25, dw, dh, 4, c);
+    // Chair in front
+    ctx.beginPath(); ctx.arc(main.cx, ry + (main.cy - ry)*0.25 + dh + 20, 15, 0, Math.PI*2);
     ctx.fillStyle = c; ctx.fill();
+    // Side cabinet
+    roundRect(ctx, alt.cx - 12, alt.cy - 8, 24, 18, 3, c);
+
   } else {
-    // Living room — sofa + coffee table
-    const sw = Math.min(rw * 0.55, 100), sh = 28;
-    roundRect(ctx, cx - sw/2, ry + rh*0.55, sw, sh, 5, c);
-    // sofa back
-    ctx.fillStyle = c; ctx.fillRect(cx - sw/2, ry + rh*0.55, sw, 8);
-    // arms
-    roundRect(ctx, cx - sw/2 - 10, ry + rh*0.55, 10, sh, 5, c);
-    roundRect(ctx, cx + sw/2, ry + rh*0.55, 10, sh, 5, c);
-    // coffee table
-    roundRect(ctx, cx - 24, ry + rh*0.42, 48, 28, 4, c);
-    // plant
-    ctx.beginPath(); ctx.arc(rx + rw - 16, ry + 16, 8, 0, Math.PI*2);
+    // Living room (default)
+    const sw = Math.min(rw * 0.52, 98), sh = 26;
+    // Sofa in main zone
+    roundRect(ctx, main.cx - sw/2, main.cy, sw, sh, 5, c);
+    ctx.fillStyle = c; ctx.globalAlpha = 0.55;
+    ctx.fillRect(main.cx - sw/2, main.cy, sw, 8); // sofa back
+    ctx.globalAlpha = 0.38;
+    roundRect(ctx, main.cx - sw/2 - 11, main.cy, 11, sh, 5, c); // arm L
+    roundRect(ctx, main.cx + sw/2,      main.cy, 11, sh, 5, c); // arm R
+    // Coffee table
+    roundRect(ctx, table.cx - 22, table.cy - 13, 44, 26, 4, c);
+    // TV unit on opposite wall
+    ctx.fillStyle = c; ctx.fillRect(wall.left + 6, wall.top + 2, Math.min(sw*0.8, 70), 12);
+    // Plant in alt corner
+    ctx.beginPath(); ctx.arc(alt.cx, alt.cy, 9, 0, Math.PI*2);
     ctx.fillStyle = c; ctx.fill();
+    ctx.beginPath(); ctx.arc(alt.cx, alt.cy, 4, 0, Math.PI*2);
+    ctx.fillStyle = '#16100a'; ctx.fill();
   }
+
   ctx.restore();
 }
 
