@@ -104,7 +104,7 @@ function drawRoomLayout() {
 
   const l = parseFloat(document.getElementById('dimLength')?.value) || 18;
   const b = parseFloat(document.getElementById('dimBreadth')?.value) || 14;
-  const shape = state.roomShape || 'rectangle';
+  const shape = state.shape || state.roomShape || 'rectangle';
 
   const pad = 52;
   const scale = Math.min((W - pad * 2) / l, (H - pad * 2) / b);
