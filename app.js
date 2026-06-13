@@ -963,6 +963,10 @@ const DESIGNS = [
   {
     id: 1, styleKey: 'japandi',
     name: 'Japandi Warmth',
+    desc: 'Quiet luxury meets wabi-sabi. Low furniture, muted neutrals, and intentional breathing space make every corner feel considered.',
+    mood: ['Calm', 'Grounded', 'Timeless'],
+    materials: ['Bamboo', 'Linen', 'Matte Stone', 'Teak'],
+    img: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=800&q=80',
     cost: '₹2,40,000', costNum: 240000, time: '3–4 weeks', confidence: 91,
     badges: ['badge-popular','badge-ai'], badgeText: ['Most Popular','AI Pick'],
     insight: 'Saves 18% vs comparable styles. Best for compact spaces under 250 sq ft.',
@@ -970,6 +974,10 @@ const DESIGNS = [
   {
     id: 2, styleKey: 'indian-modern',
     name: 'Indian Modern',
+    desc: 'Heritage craft meets contemporary form. Teak joinery, handbeaten brass, and hand-blocked textiles rooted in local artisanship.',
+    mood: ['Warm', 'Rich', 'Soulful'],
+    materials: ['Sheesham Teak', 'Handbeaten Brass', 'Jute', 'Hand-block Cotton'],
+    img: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=800&q=80',
     cost: '₹1,95,000', costNum: 195000, time: '2–3 weeks', confidence: 87,
     badges: ['badge-vastu'], badgeText: ['Vastu Aligned'],
     insight: 'Uses locally-sourced teak and brass. Fastest to execute in your city.',
@@ -977,6 +985,10 @@ const DESIGNS = [
   {
     id: 3, styleKey: 'contemporary',
     name: 'Coastal Contemporary',
+    desc: 'Airy, sunlit spaces with soft blues, sandy textures, and open sightlines. Lets your room breathe and feel twice its size.',
+    mood: ['Fresh', 'Airy', 'Expansive'],
+    materials: ['Whitewash Oak', 'Rattan', 'Linen Weave', 'Sea Glass Ceramic'],
+    img: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80',
     cost: '₹3,10,000', costNum: 310000, time: '4–5 weeks', confidence: 83,
     badges: ['badge-ai'], badgeText: ['AI Pick'],
     insight: 'Maximises natural light. Ideal for south-facing rooms. Improves space feel by 23%.',
@@ -984,6 +996,10 @@ const DESIGNS = [
   {
     id: 4, styleKey: 'luxury-modern',
     name: 'Luxury Modern',
+    desc: 'High-contrast drama — marble, velvet, and brushed gold in a space that commands attention without trying too hard.',
+    mood: ['Bold', 'Opulent', 'Dramatic'],
+    materials: ['Calacatta Marble', 'Brushed Gold', 'Bouclé Velvet', 'Smoked Glass'],
+    img: 'https://images.unsplash.com/photo-1631679706909-1844bbd07221?auto=format&fit=crop&w=800&q=80',
     cost: '₹5,80,000', costNum: 580000, time: '5–6 weeks', confidence: 88,
     badges: ['badge-budget'], badgeText: ['Best Value'],
     insight: 'Premium materials at 22% below market average. Highest resale value uplift.',
@@ -991,6 +1007,10 @@ const DESIGNS = [
   {
     id: 5, styleKey: 'earthy-organic',
     name: 'Earthy Organic',
+    desc: 'Clay, cane, and moss-green linen — a room that feels like it grew there. Tactile, sustainable, and effortlessly liveable.',
+    mood: ['Natural', 'Tactile', 'Serene'],
+    materials: ['Rattan', 'Terracotta', 'Moss Linen', 'Raw Mango Wood'],
+    img: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80',
     cost: '₹1,60,000', costNum: 160000, time: '2 weeks', confidence: 85,
     badges: ['badge-budget'], badgeText: ['Most Affordable'],
     insight: 'Easiest to maintain. Uses natural, washable fabrics — ideal for families and pets.',
@@ -1040,18 +1060,24 @@ function getAIRecommendedDesigns() {
 }
 
 function buildAIBanner() {
-  const top = getAIRecommendedDesigns()[0];
+  const ranked = getAIRecommendedDesigns();
+  const top = ranked[0];
   const styleNames = state.style.map(s => STYLE_THEMES[s]?.name || s);
   const parts = [];
-  if (styleNames.length) parts.push(styleNames.join(' & ') + ' style');
-  if (state.room) parts.push(state.room + ' room');
+  if (styleNames.length) parts.push(styleNames.join(' & '));
+  if (state.room) parts.push(state.room.charAt(0).toUpperCase() + state.room.slice(1) + ' Room');
   parts.push(state.budget.label + ' budget');
-  return `<div class="ai-reco-banner">
-    <span class="ai-reco-icon">✦</span>
-    <div class="ai-reco-text">
-      <strong>AI personalised for you</strong> · Based on your ${parts.join(' · ')}
-      ${top ? `&nbsp;·&nbsp;<em>${top.name}</em> is your top match at <strong>${top.aiScore}%</strong>` : ''}
+
+  const topImg = top?.img || (STYLE_THEMES[top?.styleKey]?.img) || '';
+  const topThumb = topImg ? `<img src="${topImg}" class="ai-banner-thumb" alt="${top.name}" />` : `<span class="ai-reco-icon">✦</span>`;
+
+  return `<div class="ai-reco-banner2">
+    ${topThumb}
+    <div class="ai-banner-body">
+      <div class="ai-banner-title">✦ AI picked <em>${top?.name || 'your best match'}</em> for your space</div>
+      <div class="ai-banner-sub">Analysed ${parts.join(' · ')} across ${ranked.length} styles — <strong>${top?.aiScore}% match</strong></div>
     </div>
+    <div class="ai-banner-score">${top?.aiScore}<span>%</span></div>
   </div>`;
 }
 
@@ -1093,41 +1119,96 @@ function renderDesignCards() {
   rankedDesigns.forEach((d, i) => {
     const card = document.createElement('div');
     const isTopPick = i === 0;
-    card.className = `design-card${state.favDesigns.has(d.id) ? ' favourited' : ''}${state.compareDesigns.has(d.id) ? ' compared' : ''}${isTopPick ? ' ai-top-pick' : ''}`;
-    card.style.animationDelay = `${i * 0.07}s`;
+    const isFav = state.favDesigns.has(d.id);
+    const isCompared = state.compareDesigns.has(d.id);
     const isSelected = state.selectedDesign?.id === d.id;
     const theme = STYLE_THEMES[d.styleKey] || STYLE_THEMES['japandi'];
+    card.className = `design-card2${isFav ? ' favourited' : ''}${isCompared ? ' compared' : ''}${isTopPick ? ' ai-top-pick' : ''}${isSelected ? ' is-selected' : ''}`;
+    card.style.animationDelay = `${i * 0.07}s`;
+
+    // Palette swatches
+    const palette = theme.palette || ['#d4c5b0','#8b7d6b','#5a4e3f','#2d2820'];
+    const swatches = palette.slice(0,5).map(c => `<span class="dc-swatch" style="background:${c}"></span>`).join('');
+
+    // Mood tags
+    const moodTags = (d.mood || []).map(m => `<span class="dc-mood-tag">${m}</span>`).join('');
+
+    // Material tags
+    const matTags = (d.materials || []).map(m => `<span class="dc-mat-tag">${m}</span>`).join('');
+
+    // Image: use design-specific img first, fall back to theme img
+    const imgSrc = d.img || theme.img || '';
+
     card.innerHTML = `
-      <div class="design-render">
-        <svg viewBox="0 0 500 210" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block">
-          ${theme.scene(500, 210)}
-        </svg>
-        <div class="design-overlay">
-          <div class="design-top-row">
-            <button class="fav-btn${state.favDesigns.has(d.id) ? ' active' : ''}" onclick="toggleFav(${d.id})" title="Save">♡</button>
-            <button class="compare-check${state.compareDesigns.has(d.id) ? ' active' : ''}" onclick="toggleCompareItem(${d.id})" title="Compare">⇄</button>
-          </div>
-          <div class="design-badges">
+      <!-- ── Photo + AI score hero ── -->
+      <div class="dc-photo-wrap">
+        <img class="dc-photo" src="${imgSrc}" alt="${d.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" />
+        <div class="dc-photo-fallback" style="display:none">
+          <svg viewBox="0 0 500 280" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">${theme.scene(500,280)}</svg>
+        </div>
+        <!-- Top action row -->
+        <div class="dc-photo-top">
+          <div class="dc-badges-row">
             ${isTopPick ? '<span class="d-badge badge-ai">✦ AI Top Pick</span>' : ''}
-            ${d.badges.map((b, idx) => `<span class="d-badge ${b}">${d.badgeText[idx]}</span>`).join('')}
+            ${d.badges.map((b,idx)=>`<span class="d-badge ${b}">${d.badgeText[idx]}</span>`).join('')}
           </div>
+          <div class="dc-actions">
+            <button class="fav-btn${isFav ? ' active' : ''}" onclick="toggleFav(${d.id})" title="Save">♡</button>
+            <button class="compare-check${isCompared ? ' active' : ''}" onclick="toggleCompareItem(${d.id})" title="Compare">⇄</button>
+          </div>
+        </div>
+        <!-- AI match score overlay (bottom of photo) -->
+        <div class="dc-match-bar">
+          <div class="dc-match-fill" style="width:${d.aiScore}%"></div>
+          <span class="dc-match-label">✦ ${d.aiScore}% AI match for your space</span>
         </div>
       </div>
-      <div class="design-info">
-        <div class="design-style-name">${d.name}</div>
-        <div class="design-meta">
-          <div class="meta-item"><div class="meta-label">Est. Cost</div><div class="meta-val">${d.cost}</div></div>
-          <div class="meta-item"><div class="meta-label">Timeline</div><div class="meta-val">${d.time}</div></div>
+
+      <!-- ── Info panel ── -->
+      <div class="dc-info">
+        <!-- Name + mood -->
+        <div class="dc-name-row">
+          <div class="dc-name">${d.name}</div>
+          <div class="dc-mood">${moodTags}</div>
         </div>
-        <div class="confidence-bar">
-          <div class="conf-track"><div class="conf-fill" style="width:${d.aiScore}%"></div></div>
-          <div class="conf-label">${d.aiScore}% AI match</div>
+
+        <!-- Description -->
+        <p class="dc-desc">${d.desc}</p>
+
+        <!-- Palette -->
+        <div class="dc-palette-row">
+          <span class="dc-section-label">Palette</span>
+          <div class="dc-swatches">${swatches}</div>
         </div>
-        <div class="ai-insight-text">💡 ${d.insight}</div>
-        <button class="design-select-btn${isSelected ? ' selected-design' : ''}" onclick="selectDesign(${d.id})">
-          ${isSelected ? '✓ Selected' : 'Select This Design'}
+
+        <!-- Materials -->
+        <div class="dc-materials-row">
+          <span class="dc-section-label">Key Materials</span>
+          <div class="dc-mats">${matTags}</div>
+        </div>
+
+        <!-- Cost + Timeline -->
+        <div class="dc-meta-row">
+          <div class="dc-meta-item">
+            <div class="dc-meta-label">Est. Cost</div>
+            <div class="dc-meta-val">${d.cost}</div>
+          </div>
+          <div class="dc-meta-divider"></div>
+          <div class="dc-meta-item">
+            <div class="dc-meta-label">Timeline</div>
+            <div class="dc-meta-val">${d.time}</div>
+          </div>
+        </div>
+
+        <!-- AI insight -->
+        <div class="dc-insight">💡 ${d.insight}</div>
+
+        <!-- CTA -->
+        <button class="dc-select-btn${isSelected ? ' selected' : ''}" onclick="selectDesign(${d.id})">
+          ${isSelected ? '✓ Design Selected' : 'Select This Design →'}
         </button>
       </div>`;
+
     grid.appendChild(card);
   });
   updateCompareBtn();

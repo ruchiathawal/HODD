@@ -231,7 +231,65 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); background-image
 .tool-btn[disabled] { opacity: .4; cursor: not-allowed; }
 .tool-btn.active-tool { background: rgba(201,146,58,.2); border-color: var(--accent); color: #7a4a10; }
 
-.designs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 1.25rem; }
+.designs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px,1fr)); gap: 1.5rem; }
+
+/* ── New design card (dc-*) ──────────────────────────────────── */
+.design-card2 { background: var(--surface); border: 1.5px solid var(--border); border-radius: 18px; overflow: hidden; transition: var(--transition); animation: fadeSlide .35s ease both; position: relative; display: flex; flex-direction: column; }
+.design-card2:hover { border-color: rgba(201,146,58,.4); transform: translateY(-4px); box-shadow: 0 16px 48px rgba(0,0,0,.12); }
+.design-card2.favourited { border-color: rgba(184,112,96,.55); }
+.design-card2.compared { border-color: rgba(201,146,58,.75); box-shadow: 0 0 0 2px rgba(201,146,58,.18); }
+.design-card2.ai-top-pick { border-color: rgba(201,146,58,.6); box-shadow: 0 0 0 2px rgba(201,146,58,.18), 0 16px 48px rgba(0,0,0,.1); }
+.design-card2.is-selected { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(201,146,58,.25); }
+
+/* Photo hero */
+.dc-photo-wrap { position: relative; height: 240px; overflow: hidden; flex-shrink: 0; background: var(--surface2); }
+.dc-photo { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .5s ease; }
+.design-card2:hover .dc-photo { transform: scale(1.04); }
+.dc-photo-fallback { position: absolute; inset: 0; }
+
+/* Top row inside photo */
+.dc-photo-top { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: flex-start; padding: .75rem; background: linear-gradient(to bottom, rgba(0,0,0,.45) 0%, transparent 100%); }
+.dc-badges-row { display: flex; flex-wrap: wrap; gap: .35rem; }
+.dc-actions { display: flex; gap: .4rem; }
+
+/* AI match bar (bottom of photo) */
+.dc-match-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 36px; background: linear-gradient(to top, rgba(22,16,10,.85) 0%, transparent 100%); display: flex; align-items: flex-end; padding: 0 .8rem .55rem; overflow: hidden; }
+.dc-match-fill { position: absolute; bottom: 0; left: 0; height: 3px; background: linear-gradient(90deg, #d4a050, #c9923a); transition: width .6s ease; }
+.dc-match-label { font-size: .68rem; font-weight: 700; color: #d4a050; letter-spacing: .06em; text-transform: uppercase; position: relative; z-index: 1; }
+
+/* Info panel */
+.dc-info { padding: 1.1rem 1.2rem 1.2rem; display: flex; flex-direction: column; gap: .7rem; flex: 1; }
+.dc-name-row { display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem; }
+.dc-name { font-family: 'DM Serif Display', serif; font-size: 1.1rem; font-weight: 400; color: var(--text); line-height: 1.2; }
+.dc-mood { display: flex; flex-wrap: wrap; gap: .3rem; }
+.dc-mood-tag { font-size: .62rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); background: rgba(201,146,58,.1); border: 1px solid rgba(201,146,58,.2); padding: .18rem .5rem; border-radius: 100px; }
+.dc-desc { font-size: .82rem; color: var(--muted); line-height: 1.6; margin: 0; }
+
+/* Palette */
+.dc-palette-row, .dc-materials-row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.dc-section-label { font-size: .62rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.dc-swatches { display: flex; gap: .3rem; }
+.dc-swatch { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.12); flex-shrink: 0; }
+.dc-mats { display: flex; flex-wrap: wrap; gap: .3rem; }
+.dc-mat-tag { font-size: .68rem; font-weight: 500; color: var(--muted2); background: var(--surface2); border: 1px solid var(--border); padding: .2rem .55rem; border-radius: 6px; }
+
+/* Cost + Timeline */
+.dc-meta-row { display: flex; align-items: center; gap: 0; background: var(--surface2); border-radius: 10px; overflow: hidden; }
+.dc-meta-item { flex: 1; padding: .6rem .9rem; }
+.dc-meta-divider { width: 1px; height: 36px; background: var(--border); }
+.dc-meta-label { font-size: .62rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: .18rem; }
+.dc-meta-val { font-size: .9rem; font-weight: 700; color: var(--text); }
+
+/* Insight */
+.dc-insight { font-size: .78rem; color: var(--muted); background: rgba(201,146,58,.07); border: 1px solid rgba(201,146,58,.15); border-radius: 8px; padding: .55rem .75rem; line-height: 1.5; }
+
+/* CTA */
+.dc-select-btn { width: 100%; padding: .75rem; background: linear-gradient(135deg,#d4a050,#c9923a,#a05848); color: #fff; border: none; border-radius: 10px; font-size: .88rem; font-weight: 700; cursor: pointer; transition: var(--transition); letter-spacing: .02em; }
+.dc-select-btn:hover { opacity: .9; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(201,146,58,.3); }
+.dc-select-btn.selected { background: linear-gradient(135deg,#3a8a50,#2d6e3e); box-shadow: none; }
+
+@media(max-width:860px) { .designs-grid { grid-template-columns: repeat(2, 1fr); } .dc-photo-wrap { height: 200px; } }
+@media(max-width:640px) { .designs-grid { grid-template-columns: 1fr; } }
 .design-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; transition: var(--transition); animation: fadeSlide .35s ease both; position: relative; }
 .design-card:hover { border-color: rgba(201,146,58,.35); transform: translateY(-3px); }
 .design-card.favourited { border-color: rgba(184,112,96,.5); }
@@ -519,18 +577,23 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); background-image
 /* ══════════════════════════════════════════════════════════════
    AI RECOMMENDATION BANNER (Phase 2)
 ══════════════════════════════════════════════════════════════ */
-.ai-reco-banner {
-  display: flex; align-items: center; gap: .75rem;
-  background: linear-gradient(135deg, rgba(176,120,40,.12), rgba(160,88,72,.08));
-  border: 1px solid rgba(176,120,40,.3);
-  border-radius: var(--radius); padding: .9rem 1.25rem;
-  margin-bottom: 1.25rem; animation: fadeSlide .3s ease;
-}
-.ai-reco-icon { font-size: 1.1rem; color: var(--accent); flex-shrink: 0; }
-.ai-reco-text { font-size: .84rem; color: var(--muted2); line-height: 1.5; }
-.ai-reco-text strong { color: var(--text); }
-.ai-reco-text em { color: var(--accent); font-style: normal; }
-.design-card.ai-top-pick { border-color: rgba(176,120,40,.5); box-shadow: 0 0 0 2px rgba(176,120,40,.15); }
+.ai-reco-banner { display:flex; align-items:center; gap:.75rem; background:linear-gradient(135deg,rgba(176,120,40,.12),rgba(160,88,72,.08)); border:1px solid rgba(176,120,40,.3); border-radius:var(--radius); padding:.9rem 1.25rem; margin-bottom:1.25rem; animation:fadeSlide .3s ease; }
+.ai-reco-icon { font-size:1.1rem; color:var(--accent); flex-shrink:0; }
+.ai-reco-text { font-size:.84rem; color:var(--muted2); line-height:1.5; }
+.ai-reco-text strong { color:var(--text); }
+.ai-reco-text em { color:var(--accent); font-style:normal; }
+.design-card.ai-top-pick { border-color:rgba(176,120,40,.5); box-shadow:0 0 0 2px rgba(176,120,40,.15); }
+
+/* New visual AI banner */
+.ai-reco-banner2 { display:flex; align-items:center; gap:1rem; background:linear-gradient(135deg,rgba(176,120,40,.13),rgba(160,88,72,.07)); border:1.5px solid rgba(176,120,40,.35); border-radius:16px; padding:1rem 1.25rem; margin-bottom:1.5rem; animation:fadeSlide .3s ease; overflow:hidden; position:relative; }
+.ai-banner-thumb { width:64px; height:64px; border-radius:10px; object-fit:cover; flex-shrink:0; border:1.5px solid rgba(201,146,58,.3); }
+.ai-banner-body { flex:1; min-width:0; }
+.ai-banner-title { font-size:.9rem; font-weight:600; color:var(--text); line-height:1.35; }
+.ai-banner-title em { color:var(--accent); font-style:normal; }
+.ai-banner-sub { font-size:.78rem; color:var(--muted); margin-top:.2rem; }
+.ai-banner-sub strong { color:var(--accent); }
+.ai-banner-score { font-family:'DM Serif Display',serif; font-size:2.4rem; font-weight:400; color:var(--accent); opacity:.25; line-height:1; flex-shrink:0; }
+.ai-banner-score span { font-size:1rem; }
 
 /* ══════════════════════════════════════════════════════════════
    AI PRODUCT CURATION (Phase 5)
