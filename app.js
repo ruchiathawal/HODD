@@ -1146,6 +1146,163 @@ function buildAIBanner() {
 function goPhase2() {
   showPhase(2);
   renderDesignCards();
+  // If user has uploaded a photo, kick off AI renders in background
+  if (state.referencePhoto) {
+    startAIRenders();
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   AI RENDER ENGINE  (Replicate via Netlify Functions)
+═══════════════════════════════════════════════════════════════ */
+
+// Resize image to max 768px before sending to API (saves cost + time)
+function resizeImageForAI(dataUrl, maxSize = 768) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', 0.85));
+    };
+    img.src = dataUrl;
+  });
+}
+
+async function startPrediction(imageBase64, styleKey, roomType, variationIndex) {
+  const res = await fetch('/.netlify/functions/render-start', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ imageBase64, styleKey, roomType, variationIndex }),
+  });
+  if (!res.ok) throw new Error(`render-start failed: ${res.status}`);
+  return res.json(); // { id, status }
+}
+
+async function pollPrediction(id, onUpdate, maxWait = 120000) {
+  const start = Date.now();
+  while (Date.now() - start < maxWait) {
+    await new Promise(r => setTimeout(r, 3000));
+    const res = await fetch(`/.netlify/functions/render-poll?id=${id}`);
+    const data = await res.json();
+    onUpdate(data);
+    if (data.status === 'succeeded') return data.output;
+    if (data.status === 'failed') throw new Error(data.error || 'Render failed');
+  }
+  throw new Error('Render timed out');
+}
+
+// State for renders
+const aiRenders = {}; // { designId: { status, url } }
+
+async function startAIRenders() {
+  const rankedDesigns = getAIRecommendedDesigns();
+  const resizedImage = await resizeImageForAI(state.referencePhoto);
+  const roomType = state.room || 'living';
+
+  // Show loading state on all cards
+  rankedDesigns.forEach(d => {
+    aiRenders[d.id] = { status: 'loading', url: null };
+    updateCardRenderState(d.id, 'loading', null);
+  });
+
+  // Update preview panel to show loading
+  p2ShowRenderLoading(rankedDesigns[0]);
+
+  // Start all renders in parallel (one per design)
+  const renderJobs = rankedDesigns.map(async (d, i) => {
+    try {
+      const { id } = await startPrediction(resizedImage, d.styleKey, roomType, 0);
+      const url = await pollPrediction(id, (data) => {
+        if (data.status === 'processing') {
+          updateCardRenderState(d.id, 'processing', null);
+        }
+      });
+      aiRenders[d.id] = { status: 'done', url };
+      updateCardRenderState(d.id, 'done', url);
+      // If this is the currently previewed design, update live preview
+      const activeId = parseInt(document.getElementById('p2ConfirmBtn')?.dataset.pendingId);
+      if (activeId === d.id || i === 0) {
+        p2UpdatePreviewImage(url, d);
+      }
+    } catch (err) {
+      console.warn(`Render failed for ${d.name}:`, err.message);
+      aiRenders[d.id] = { status: 'error', url: null };
+      updateCardRenderState(d.id, 'error', null);
+    }
+  });
+
+  // Don't await all — they resolve individually as each render finishes
+}
+
+function updateCardRenderState(designId, status, url) {
+  const card = document.querySelector(`.design-card-compact[data-design-id="${designId}"]`);
+  if (!card) return;
+  const thumb = card.querySelector('.dcc-thumb');
+  const badge = card.querySelector('.dcc-render-badge');
+
+  if (status === 'loading' || status === 'processing') {
+    if (thumb) thumb.style.opacity = '.4';
+    if (!badge) {
+      const b = document.createElement('div');
+      b.className = 'dcc-render-badge';
+      b.innerHTML = '<span class="render-spinner"></span> Rendering…';
+      card.querySelector('.dcc-thumb-wrap')?.appendChild(b);
+    }
+  } else if (status === 'done' && url) {
+    if (thumb) {
+      thumb.src = url;
+      thumb.style.opacity = '1';
+      thumb.style.transition = 'opacity .5s ease';
+    }
+    const oldBadge = card.querySelector('.dcc-render-badge');
+    if (oldBadge) {
+      oldBadge.innerHTML = '✦ Your room';
+      oldBadge.style.background = 'rgba(58,138,80,.85)';
+    }
+  } else if (status === 'error') {
+    const oldBadge = card.querySelector('.dcc-render-badge');
+    if (oldBadge) oldBadge.remove();
+    if (thumb) thumb.style.opacity = '1';
+  }
+}
+
+function p2ShowRenderLoading(design) {
+  const name = document.getElementById('p2OvName');
+  if (name && design) {
+    const existing = document.getElementById('p2RenderStatus');
+    if (!existing) {
+      const el = document.createElement('div');
+      el.id = 'p2RenderStatus';
+      el.className = 'p2-render-status';
+      el.innerHTML = `<span class="render-spinner"></span> Rendering <em>${design.name}</em> with your room photo…`;
+      name.parentNode.insertBefore(el, name);
+    }
+  }
+}
+
+function p2UpdatePreviewImage(url, design) {
+  // Remove render status
+  document.getElementById('p2RenderStatus')?.remove();
+  // Add "Your room" badge
+  const topTag = document.getElementById('p2TopTag');
+  if (topTag) topTag.innerHTML = `<span class="d-badge badge-ai" style="background:rgba(58,138,80,.9)">✦ Your actual room</span>`;
+  // Crossfade to the AI render
+  const imgA = document.getElementById('p2ImgA');
+  const imgB = document.getElementById('p2ImgB');
+  if (!imgA || !imgB) return;
+  const next = _p2ActiveImgSlot === 'a' ? imgB : imgA;
+  const curr = _p2ActiveImgSlot === 'a' ? imgA : imgB;
+  next.src = url;
+  next.onload = () => {
+    next.classList.add('active');
+    curr.classList.remove('active');
+    _p2ActiveImgSlot = _p2ActiveImgSlot === 'a' ? 'b' : 'a';
+  };
 }
 
 function renderDesignCards() {
