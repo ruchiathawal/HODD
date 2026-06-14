@@ -576,11 +576,18 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); background-image
 .dim-area-badge { background: rgba(201,146,58,.15); border: 1px solid rgba(201,146,58,.25); color: #7a4a10; font-size: .78rem; font-weight: 700; padding: .4rem .85rem; border-radius: 100px; white-space: nowrap; align-self: flex-end; margin-bottom: .2rem; }
 
 .shape-label { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); margin-bottom: .6rem; }
-.shape-grid { display: flex; gap: .6rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
-.shape-btn { display: flex; flex-direction: column; align-items: center; gap: .4rem; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: .7rem 1rem; cursor: pointer; transition: var(--transition); color: var(--muted2); font-size: .75rem; font-weight: 500; min-width: 70px; }
-.shape-btn:hover { border-color: var(--accent); color: var(--text); }
+.shape-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: .55rem; margin-bottom: 1.25rem; }
+.shape-btn { display: flex; flex-direction: column; align-items: center; gap: .35rem; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: .65rem .5rem; cursor: pointer; transition: var(--transition); color: var(--muted2); font-size: .68rem; font-weight: 500; text-align: center; }
+.shape-btn:hover { border-color: var(--accent); color: var(--text); background: rgba(201,146,58,.07); }
 .shape-btn.selected { background: rgba(201,146,58,.18); border-color: var(--accent); color: #7a4a10; }
-.shape-icon { width: 36px; height: 28px; }
+.shape-icon { width: 40px; height: 28px; }
+
+/* Furniture chips */
+.furniture-question { font-size: .78rem; font-weight: 600; color: var(--muted2); margin-bottom: .5rem; }
+.furniture-chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+.furn-chip { font-size: .76rem; font-weight: 500; padding: .35rem .75rem; border-radius: 100px; border: 1px solid var(--border2); background: var(--surface2); color: var(--muted2); cursor: pointer; transition: var(--transition); }
+.furn-chip:hover { border-color: var(--accent); color: var(--accent); }
+.furn-chip.furn-active { background: rgba(201,146,58,.15); border-color: var(--accent); color: #7a4a10; font-weight: 600; }
 
 .pillar-section { }
 .pillar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: .75rem; }

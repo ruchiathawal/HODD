@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>HODD — Dream it. Design it. Own it.</title>
-  <link rel="stylesheet" href="style.css?v=16" />
+  <link rel="stylesheet" href="style.css?v=17" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
 
@@ -207,9 +207,9 @@
         <div class="input-section">
           <div class="input-label">💰 Budget Range</div>
           <div class="budget-slider-wrap">
-            <input type="range" min="0" max="5" value="2" class="budget-slider" id="budgetSlider" oninput="updateBudget(this.value)" />
+            <input type="range" min="0" max="17" value="6" class="budget-slider" id="budgetSlider" oninput="updateBudget(this.value)" />
             <div class="budget-labels">
-              <span>₹50K</span><span>₹1L</span><span>₹2L</span><span>₹5L</span><span>₹8L</span><span>₹10L+</span>
+              <span>₹50K</span><span>₹1L</span><span>₹2L</span><span>₹5L</span><span>₹8L</span><span>₹15L+</span>
             </div>
             <div class="budget-tier-row">
               <span class="budget-tier" id="budgetTier">Mid-Range</span>
@@ -226,6 +226,40 @@
           </div>
         </div>
 
+        <!-- Furniture -->
+        <div class="input-section">
+          <div class="input-label">🛋 Furniture <span class="optional-tag">tell us what you have & want</span></div>
+
+          <div class="furniture-question">Do you have existing furniture to keep?</div>
+          <div class="furniture-chips" id="existingFurnitureChips">
+            <button class="furn-chip" data-furn="sofa" onclick="toggleFurniture('existing','sofa',this)">🛋 Sofa</button>
+            <button class="furn-chip" data-furn="bed" onclick="toggleFurniture('existing','bed',this)">🛏 Bed</button>
+            <button class="furn-chip" data-furn="dining-table" onclick="toggleFurniture('existing','dining-table',this)">🍽 Dining Table</button>
+            <button class="furn-chip" data-furn="wardrobe" onclick="toggleFurniture('existing','wardrobe',this)">🚪 Wardrobe</button>
+            <button class="furn-chip" data-furn="tv-unit" onclick="toggleFurniture('existing','tv-unit',this)">📺 TV Unit</button>
+            <button class="furn-chip" data-furn="desk" onclick="toggleFurniture('existing','desk',this)">🖥 Desk</button>
+            <button class="furn-chip" data-furn="bookshelf" onclick="toggleFurniture('existing','bookshelf',this)">📚 Bookshelf</button>
+            <button class="furn-chip" data-furn="center-table" onclick="toggleFurniture('existing','center-table',this)">☕ Center Table</button>
+          </div>
+
+          <div class="furniture-question" style="margin-top:.9rem">What new furniture do you want?</div>
+          <div class="furniture-chips" id="wantedFurnitureChips">
+            <button class="furn-chip" data-furn="sofa" onclick="toggleFurniture('wanted','sofa',this)">🛋 Sofa</button>
+            <button class="furn-chip" data-furn="accent-chair" onclick="toggleFurniture('wanted','accent-chair',this)">🪑 Accent Chair</button>
+            <button class="furn-chip" data-furn="bed" onclick="toggleFurniture('wanted','bed',this)">🛏 Bed</button>
+            <button class="furn-chip" data-furn="storage" onclick="toggleFurniture('wanted','storage',this)">📦 Storage Unit</button>
+            <button class="furn-chip" data-furn="side-table" onclick="toggleFurniture('wanted','side-table',this)">🪴 Side Table</button>
+            <button class="furn-chip" data-furn="shoe-rack" onclick="toggleFurniture('wanted','shoe-rack',this)">👟 Shoe Rack</button>
+            <button class="furn-chip" data-furn="display-cabinet" onclick="toggleFurniture('wanted','display-cabinet',this)">🏺 Display Cabinet</button>
+            <button class="furn-chip" data-furn="lounge-chair" onclick="toggleFurniture('wanted','lounge-chair',this)">🪑 Lounge Chair</button>
+          </div>
+
+          <label class="constraint-item" style="margin-top:.9rem;display:flex;align-items:center;gap:.5rem">
+            <input type="checkbox" id="reconfigureCheck" onchange="state.furniture.reconfigure=this.checked;drawRoomLayout()" />
+            <span>✨ Reconfigure existing furniture as per my selected design theme</span>
+          </label>
+        </div>
+
         <!-- Constraints -->
         <div class="input-section">
           <div class="input-label">⚙️ Preferences <span class="optional-tag">optional</span></div>
@@ -235,7 +269,6 @@
             <label class="constraint-item"><input type="checkbox" onchange="toggleConstraint('rental',this.checked)" /><span>🔧 Rental-friendly</span></label>
             <label class="constraint-item"><input type="checkbox" onchange="toggleConstraint('kids',this.checked)" /><span>👶 Child-safe</span></label>
             <label class="constraint-item"><input type="checkbox" onchange="toggleConstraint('storage',this.checked)" /><span>📦 Max storage</span></label>
-            <label class="constraint-item"><input type="checkbox" onchange="toggleConstraint('keep',this.checked)" /><span>🛋 Keep existing furniture</span></label>
           </div>
           <input type="text" class="city-input" style="margin-top:.75rem" placeholder="Preferred colors or any other notes…" oninput="state.notes=this.value" />
         </div>
@@ -289,24 +322,36 @@
       <div class="lp-section-label" style="margin-top:1.2rem">Room Shape</div>
       <div class="shape-grid" id="shapeGrid">
         <button class="shape-btn selected" data-shape="rectangle" onclick="selectShape(this);drawRoomLayout()">
-          <svg class="shape-icon" viewBox="0 0 40 28"><rect x="2" y="2" width="36" height="24" rx="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-          <span>Rectangle</span>
+          <svg class="shape-icon" viewBox="0 0 44 30"><rect x="2" y="2" width="40" height="26" rx="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+          <span>Rectangular</span>
         </button>
         <button class="shape-btn" data-shape="square" onclick="selectShape(this);drawRoomLayout()">
           <svg class="shape-icon" viewBox="0 0 32 32"><rect x="2" y="2" width="28" height="28" rx="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>
           <span>Square</span>
         </button>
         <button class="shape-btn" data-shape="l-shape" onclick="selectShape(this);drawRoomLayout()">
-          <svg class="shape-icon" viewBox="0 0 36 36"><path d="M2 2 h20 v14 h14 v20 H2 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-          <span>L-Shape</span>
+          <svg class="shape-icon" viewBox="0 0 38 38"><path d="M2 2 h22 v16 h16 v20 H2 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+          <span>L-Shaped</span>
+        </button>
+        <button class="shape-btn" data-shape="t-shape" onclick="selectShape(this);drawRoomLayout()">
+          <svg class="shape-icon" viewBox="0 0 44 38"><path d="M2 2 h40 v14 h-13 v22 h-14 v-22 h-13 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+          <span>T-Shaped</span>
         </button>
         <button class="shape-btn" data-shape="u-shape" onclick="selectShape(this);drawRoomLayout()">
-          <svg class="shape-icon" viewBox="0 0 40 32"><path d="M2 2 h10 v20 h16 v-20 h10 v28 H2 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-          <span>U-Shape</span>
+          <svg class="shape-icon" viewBox="0 0 44 36"><path d="M2 2 h12 v22 h16 v-22 h12 v32 H2 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+          <span>U-Shaped</span>
         </button>
-        <button class="shape-btn" data-shape="irregular" onclick="selectShape(this);drawRoomLayout()">
-          <svg class="shape-icon" viewBox="0 0 40 36"><path d="M2 18 L12 2 L38 4 L36 28 L20 34 L2 26 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-          <span>Irregular</span>
+        <button class="shape-btn" data-shape="circle" onclick="selectShape(this);drawRoomLayout()">
+          <svg class="shape-icon" viewBox="0 0 36 36"><ellipse cx="18" cy="18" rx="15" ry="12" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+          <span>Circular/Oval</span>
+        </button>
+        <button class="shape-btn" data-shape="trapezoid" onclick="selectShape(this);drawRoomLayout()">
+          <svg class="shape-icon" viewBox="0 0 44 30"><path d="M8 2 h28 l8 26 H0 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+          <span>Trapezoid</span>
+        </button>
+        <button class="shape-btn" data-shape="octagon" onclick="selectShape(this);drawRoomLayout()">
+          <svg class="shape-icon" viewBox="0 0 36 36"><path d="M11 2 h14 l9 9 v14 l-9 9 H11 L2 25 V11 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+          <span>Octagonal</span>
         </button>
       </div>
 

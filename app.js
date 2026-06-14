@@ -8,6 +8,7 @@ const state = {
   dims: { length: 18, breadth: 14, height: 10 },
   shape: 'rectangle',
   pillars: [],
+  furniture: { existing: [], wanted: [], reconfigure: false },
   selectedDesign: null, favDesigns: new Set(), compareDesigns: new Set(),
   wallColor: '#f5ede0', sofa: 'modular', floor: 'wood', lighting: 'warm',
   decor: { plant: true, art: true, rug: false, curtains: false },
@@ -16,11 +17,23 @@ const state = {
 
 const BUDGET_DATA = [
   { label: 'Budget-Friendly', value: '₹50,000',    tier: 0 },
+  { label: 'Budget-Friendly', value: '₹75,000',    tier: 0 },
   { label: 'Budget-Friendly', value: '₹1,00,000',  tier: 0 },
+  { label: 'Budget-Friendly', value: '₹1,25,000',  tier: 0 },
+  { label: 'Mid-Range',       value: '₹1,50,000',  tier: 1 },
+  { label: 'Mid-Range',       value: '₹1,75,000',  tier: 1 },
   { label: 'Mid-Range',       value: '₹2,00,000',  tier: 1 },
+  { label: 'Mid-Range',       value: '₹2,50,000',  tier: 1 },
+  { label: 'Mid-Range',       value: '₹3,00,000',  tier: 1 },
+  { label: 'Mid-Range',       value: '₹3,50,000',  tier: 1 },
+  { label: 'Mid-Range',       value: '₹4,00,000',  tier: 1 },
   { label: 'Mid-Range',       value: '₹5,00,000',  tier: 1 },
+  { label: 'Premium',         value: '₹6,00,000',  tier: 2 },
+  { label: 'Premium',         value: '₹7,00,000',  tier: 2 },
   { label: 'Premium',         value: '₹8,00,000',  tier: 2 },
-  { label: 'Luxury',          value: '₹10,00,000+', tier: 3 },
+  { label: 'Premium',         value: '₹10,00,000', tier: 2 },
+  { label: 'Luxury',          value: '₹12,00,000', tier: 3 },
+  { label: 'Luxury',          value: '₹15,00,000+', tier: 3 },
 ];
 
 /* ═══════════════════════════════════════════════════════════════
@@ -131,17 +144,42 @@ function drawRoomLayout() {
   function buildRoomPath() {
     ctx.beginPath();
     if (shape === 'l-shape') {
-      // Top-left block + bottom-right extension
       const mx = rx + rw * 0.55, my = ry + rh * 0.45;
       ctx.moveTo(rx, ry); ctx.lineTo(mx, ry); ctx.lineTo(mx, my);
       ctx.lineTo(rx + rw, my); ctx.lineTo(rx + rw, ry + rh);
       ctx.lineTo(rx, ry + rh); ctx.closePath();
+    } else if (shape === 't-shape') {
+      // Top bar full width, stem comes down from center
+      const sw = rw * 0.38, sx = rx + (rw - sw) / 2;
+      const barH = rh * 0.4;
+      ctx.moveTo(rx, ry); ctx.lineTo(rx + rw, ry);
+      ctx.lineTo(rx + rw, ry + barH); ctx.lineTo(sx + sw, ry + barH);
+      ctx.lineTo(sx + sw, ry + rh); ctx.lineTo(sx, ry + rh);
+      ctx.lineTo(sx, ry + barH); ctx.lineTo(rx, ry + barH);
+      ctx.closePath();
     } else if (shape === 'u-shape') {
       const wa = rw * 0.28, wb = rw * 0.72, mh = rh * 0.5;
       ctx.moveTo(rx, ry); ctx.lineTo(rx + wa, ry); ctx.lineTo(rx + wa, ry + mh);
       ctx.lineTo(rx + wb, ry + mh); ctx.lineTo(rx + wb, ry);
       ctx.lineTo(rx + rw, ry); ctx.lineTo(rx + rw, ry + rh);
       ctx.lineTo(rx, ry + rh); ctx.closePath();
+    } else if (shape === 'circle') {
+      ctx.ellipse(rx + rw / 2, ry + rh / 2, rw / 2, rh / 2, 0, 0, Math.PI * 2);
+    } else if (shape === 'trapezoid') {
+      const inset = rw * 0.18;
+      ctx.moveTo(rx + inset, ry); ctx.lineTo(rx + rw - inset, ry);
+      ctx.lineTo(rx + rw, ry + rh); ctx.lineTo(rx, ry + rh);
+      ctx.closePath();
+    } else if (shape === 'octagon') {
+      const cut = Math.min(rw, rh) * 0.22;
+      ctx.moveTo(rx + cut, ry); ctx.lineTo(rx + rw - cut, ry);
+      ctx.lineTo(rx + rw, ry + cut); ctx.lineTo(rx + rw, ry + rh - cut);
+      ctx.lineTo(rx + rw - cut, ry + rh); ctx.lineTo(rx + cut, ry + rh);
+      ctx.lineTo(rx, ry + rh - cut); ctx.lineTo(rx, ry + cut);
+      ctx.closePath();
+    } else if (shape === 'square') {
+      const s = Math.min(rw, rh);
+      ctx.rect(rx + (rw - s) / 2, ry + (rh - s) / 2, s, s);
     } else {
       ctx.rect(rx, ry, rw, rh);
     }
@@ -241,13 +279,28 @@ function drawFurniture(ctx, rx, ry, rw, rh, shape, room) {
   // The clip set by the caller prevents any overflow.
   let zones;
   if (shape === 'l-shape') {
-    // Left column (always inside): cx ≈ rx + rw*0.275
-    // Bottom-right zone: cx ≈ rx + rw*0.78, cy ≈ ry + rh*0.72
     zones = {
       main:  { cx: rx + rw * 0.275, cy: ry + rh * 0.55 },
       table: { cx: rx + rw * 0.275, cy: ry + rh * 0.35 },
       alt:   { cx: rx + rw * 0.78,  cy: ry + rh * 0.72 },
       wall:  { top: ry + 8, left: rx + 8, right: rx + rw * 0.52, bottom: ry + rh - 8 },
+    };
+  } else if (shape === 't-shape') {
+    // Stem center is safe for main furniture
+    const sw = rw * 0.38, sx = rx + (rw - sw) / 2;
+    zones = {
+      main:  { cx: sx + sw / 2, cy: ry + rh * 0.72 },
+      table: { cx: sx + sw / 2, cy: ry + rh * 0.55 },
+      alt:   { cx: rx + rw * 0.15, cy: ry + rh * 0.22 },
+      wall:  { top: ry + 8, left: sx + 6, right: sx + sw - 6, bottom: ry + rh - 8 },
+    };
+  } else if (shape === 'circle' || shape === 'octagon' || shape === 'trapezoid') {
+    // Center is always safe for these
+    zones = {
+      main:  { cx: rx + rw * 0.5,  cy: ry + rh * 0.62 },
+      table: { cx: rx + rw * 0.5,  cy: ry + rh * 0.42 },
+      alt:   { cx: rx + rw * 0.72, cy: ry + rh * 0.28 },
+      wall:  { top: ry + rh * 0.15, left: rx + rw * 0.15, right: rx + rw * 0.85, bottom: ry + rh * 0.85 },
     };
   } else if (shape === 'u-shape') {
     // Bottom connecting bar is safest for main furniture
@@ -374,6 +427,15 @@ function selectStyle(el) {
 }
 
 function toggleConstraint(key, val) { val ? state.constraints.add(key) : state.constraints.delete(key); }
+
+function toggleFurniture(type, key, btn) {
+  const arr = state.furniture[type];
+  const idx = arr.indexOf(key);
+  if (idx === -1) { arr.push(key); btn.classList.add('furn-active'); }
+  else { arr.splice(idx, 1); btn.classList.remove('furn-active'); }
+  drawRoomLayout(); // update canvas to show furniture
+  autosave();
+}
 
 function updateBudget(val) {
   const d = BUDGET_DATA[val];
@@ -1242,7 +1304,9 @@ function p2SetPreview(d, lock = false) {
 function confirmDesignAndNext() {
   const btn = document.getElementById('p2ConfirmBtn');
   const id = parseInt(btn?.dataset.pendingId);
-  if (id) selectDesign(id);
+  // selectDesign re-renders cards but we navigate away immediately after
+  if (id) state.selectedDesign = DESIGNS.find(d => d.id === id) || state.selectedDesign;
+  if (!state.selectedDesign) state.selectedDesign = DESIGNS[0];
   goPhase3();
 }
 
