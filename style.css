@@ -812,12 +812,66 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); background-image
 .p3-preview-col { position: sticky; top: 80px; display: flex; flex-direction: column; gap: .9rem; }
 .p3-config-col { display: flex; flex-direction: column; gap: 0; max-height: 85vh; overflow-y: auto; padding-right: .25rem; scrollbar-width: thin; }
 
-.p3-img-frame { position: relative; border-radius: 18px; overflow: hidden; background: var(--surface2); aspect-ratio: 4/3; }
-.p3-img-frame img { width: 100%; height: 100%; object-fit: cover; display: block; transition: filter .4s ease; }
-.p3-wall-overlay { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: multiply; transition: background .4s ease, opacity .4s ease; border-radius: 18px; }
-.p3-badge-strip { position: absolute; bottom: .75rem; left: .75rem; display: flex; flex-wrap: wrap; gap: .35rem; }
-.p3-badge { font-size: .62rem; font-weight: 700; padding: .25rem .55rem; border-radius: 6px; background: rgba(22,16,10,.75); color: #d4a050; letter-spacing: .05em; }
-.p3-design-name { font-family: 'DM Serif Display',serif; font-size: 1.1rem; color: var(--text); }
+/* Phase 3 preview frame — border colour = wall colour */
+.p3-img-frame {
+  position: relative; border-radius: 18px; overflow: visible;
+  background: var(--surface2); aspect-ratio: 4/3;
+  border: 8px solid #F5F0E8;
+  transition: border-color .4s ease;
+  box-shadow: 0 4px 32px rgba(0,0,0,.12);
+}
+.p3-img-frame > img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  border-radius: 11px; transition: filter .45s ease, opacity .3s ease;
+}
+/* Wall-paint gradient overlay — paints upper wall area */
+.p3-wall-overlay {
+  position: absolute; inset: 0; pointer-events: none;
+  border-radius: 11px;
+  transition: background .4s ease;
+}
+/* Lighting mood overlay */
+.p3-lighting-overlay {
+  position: absolute; inset: 0; pointer-events: none;
+  border-radius: 11px; mix-blend-mode: soft-light;
+  transition: background .4s ease;
+}
+/* AI Re-render button — floated bottom-right of image */
+.p3-rerender-btn {
+  position: absolute; bottom: -1.5rem; right: 0;
+  background: var(--text); color: var(--accent);
+  border: none; border-radius: 100px;
+  font-size: .72rem; font-weight: 700; letter-spacing: .07em;
+  padding: .4rem 1rem; cursor: pointer;
+  transition: all .2s; white-space: nowrap;
+  box-shadow: 0 2px 12px rgba(0,0,0,.3);
+}
+.p3-rerender-btn:hover:not(:disabled) { background: var(--accent); color: #fff; transform: translateY(-1px); }
+.p3-rerender-btn:disabled { opacity: .6; cursor: default; }
+
+/* Design Board — live summary strip */
+.p3-design-board {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  padding: .7rem .9rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .45rem .6rem;
+  margin-top: 1.8rem;
+}
+.pdb-row {
+  display: flex; align-items: center; gap: .5rem;
+}
+.pdb-swatch {
+  width: 28px; height: 28px; border-radius: 7px;
+  border: 1.5px solid rgba(0,0,0,.12);
+  flex-shrink: 0; transition: background .35s ease;
+}
+.pdb-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1; }
+.pdb-info { min-width: 0; }
+.pdb-label { font-size: .58rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); line-height: 1; }
+.pdb-val   { font-size: .7rem; font-weight: 500; color: var(--text); margin-top: .1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: capitalize; }
 
 .p3-section { padding: 1.1rem 0; border-bottom: 1px solid var(--border); }
 .p3-section:last-child { border-bottom: none; }

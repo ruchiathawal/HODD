@@ -10,7 +10,7 @@ const state = {
   pillars: [],
   furniture: { existing: [], wanted: [], reconfigure: false },
   selectedDesign: null, favDesigns: new Set(), compareDesigns: new Set(),
-  wallColor: '#f5ede0', sofa: 'modular', floor: 'wood', lighting: 'warm',
+  wallColor: '#F5F0E8', sofa: { style: 'modular', material: 'fabric', color: '#C8C0B0', size: '3-seater' }, floor: 'teak-hardwood', lighting: 'warm', wallFinish: 'matte', lightingType: 'recessed', ceiling: 'plain', curtain: {}, rug: {},
   decor: { plant: true, art: true, rug: false, curtains: false },
   cart: [], phase: 1,
 };
@@ -691,13 +691,15 @@ const STYLE_THEMES = {
       'https://images.unsplash.com/photo-1600210491892-03d54079340e?auto=format&fit=crop&w=900&q=80',
     ],
     roomImages: {
-      living:  'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=800&q=80',
-      bedroom: 'https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&w=800&q=80',
-      kitchen: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=800&q=80',
-      dining:  'https://images.unsplash.com/photo-1567016432779-094069958ea5?auto=format&fit=crop&w=800&q=80',
-      office:  'https://images.unsplash.com/photo-1600210491892-03d54079340e?auto=format&fit=crop&w=800&q=80',
-      bathroom:'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?auto=format&fit=crop&w=800&q=80',
-      kids:    'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80',
+      living:     'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=800&q=80',
+      bedroom:    'https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&w=800&q=80',
+      kitchen:    'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=800&q=80',
+      dining:     'https://images.unsplash.com/photo-1567016432779-094069958ea5?auto=format&fit=crop&w=800&q=80',
+      office:     'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?auto=format&fit=crop&w=800&q=80',
+      workoffice: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=800&q=80',
+      bathroom:   'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?auto=format&fit=crop&w=800&q=80',
+      kids:       'https://images.unsplash.com/photo-1617104678098-de229db51175?auto=format&fit=crop&w=800&q=80',
+      studio:     'https://images.unsplash.com/photo-1560185009-5bf9f2849488?auto=format&fit=crop&w=800&q=80',
     },
     bg: ['#2a2218','#3d3120','#1a1510'],
     scene: (w,h) => `
@@ -814,13 +816,15 @@ const STYLE_THEMES = {
       'https://images.unsplash.com/photo-1631679706909-1844bbd07221?auto=format&fit=crop&w=900&q=80',
     ],
     roomImages: {
-      living:  'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80',
-      bedroom: 'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&w=800&q=80',
-      kitchen: 'https://images.unsplash.com/photo-1560448204-603b3fc33ddc?auto=format&fit=crop&w=800&q=80',
-      dining:  'https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&w=800&q=80',
-      office:  'https://images.unsplash.com/photo-1631679706909-1844bbd07221?auto=format&fit=crop&w=800&q=80',
-      bathroom:'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?auto=format&fit=crop&w=800&q=80',
-      kids:    'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80',
+      living:     'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80',
+      bedroom:    'https://images.unsplash.com/photo-1560184897-ae5f0be82d25?auto=format&fit=crop&w=800&q=80',
+      kitchen:    'https://images.unsplash.com/photo-1556909172-54557c7e4fb7?auto=format&fit=crop&w=800&q=80',
+      dining:     'https://images.unsplash.com/photo-1519710164239-da123dc03ef4?auto=format&fit=crop&w=800&q=80',
+      office:     'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=800&q=80',
+      workoffice: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=800&q=80',
+      bathroom:   'https://images.unsplash.com/photo-1620626011761-996317702574?auto=format&fit=crop&w=800&q=80',
+      kids:       'https://images.unsplash.com/photo-1617104678098-de229db51175?auto=format&fit=crop&w=800&q=80',
+      studio:     'https://images.unsplash.com/photo-1560185009-5bf9f2849488?auto=format&fit=crop&w=800&q=80',
     },
     bg: ['#1e1a16','#2e2820','#131008'],
     scene: (w,h) => `
@@ -945,13 +949,15 @@ const STYLE_THEMES = {
       'https://images.unsplash.com/photo-1600121848594-d8644e57abab?auto=format&fit=crop&w=900&q=80',
     ],
     roomImages: {
-      living:  'https://images.unsplash.com/photo-1631679706909-1844bbd07221?auto=format&fit=crop&w=800&q=80',
-      bedroom: 'https://images.unsplash.com/photo-1615529328331-f8917597711f?auto=format&fit=crop&w=800&q=80',
-      kitchen: 'https://images.unsplash.com/photo-1618219908412-a29a1bb7b86e?auto=format&fit=crop&w=800&q=80',
-      dining:  'https://images.unsplash.com/photo-1600607687644-aac4c3eac7f4?auto=format&fit=crop&w=800&q=80',
-      office:  'https://images.unsplash.com/photo-1600121848594-d8644e57abab?auto=format&fit=crop&w=800&q=80',
-      bathroom:'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?auto=format&fit=crop&w=800&q=80',
-      kids:    'https://images.unsplash.com/photo-1560448204-603b3fc33ddc?auto=format&fit=crop&w=800&q=80',
+      living:     'https://images.unsplash.com/photo-1631679706909-1844bbd07221?auto=format&fit=crop&w=800&q=80',
+      bedroom:    'https://images.unsplash.com/photo-1615529328331-f8917597711f?auto=format&fit=crop&w=800&q=80',
+      kitchen:    'https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=800&q=80',
+      dining:     'https://images.unsplash.com/photo-1550226891-ef816aed4a98?auto=format&fit=crop&w=800&q=80',
+      office:     'https://images.unsplash.com/photo-1600121848594-d8644e57abab?auto=format&fit=crop&w=800&q=80',
+      workoffice: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=800&q=80',
+      bathroom:   'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?auto=format&fit=crop&w=800&q=80',
+      kids:       'https://images.unsplash.com/photo-1617104678098-de229db51175?auto=format&fit=crop&w=800&q=80',
+      studio:     'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80',
     },
     bg: ['#1a0a2e','#2d1458','#0a0418'],
     scene: (w,h) => `
@@ -1037,13 +1043,15 @@ const STYLE_THEMES = {
       'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=900&q=80',
     ],
     roomImages: {
-      living:  'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=800&q=80',
-      bedroom: 'https://images.unsplash.com/photo-1618220179428-22790b461013?auto=format&fit=crop&w=800&q=80',
-      kitchen: 'https://images.unsplash.com/photo-1585412727339-54e4bae3bbf9?auto=format&fit=crop&w=800&q=80',
-      dining:  'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=800&q=80',
-      office:  'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80',
-      bathroom:'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?auto=format&fit=crop&w=800&q=80',
-      kids:    'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=800&q=80',
+      living:     'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=800&q=80',
+      bedroom:    'https://images.unsplash.com/photo-1586105251261-72a756497a11?auto=format&fit=crop&w=800&q=80',
+      kitchen:    'https://images.unsplash.com/photo-1585412727339-54e4bae3bbf9?auto=format&fit=crop&w=800&q=80',
+      dining:     'https://images.unsplash.com/photo-1617806118233-18e1de247200?auto=format&fit=crop&w=800&q=80',
+      office:     'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?auto=format&fit=crop&w=800&q=80',
+      workoffice: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=800&q=80',
+      bathroom:   'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?auto=format&fit=crop&w=800&q=80',
+      kids:       'https://images.unsplash.com/photo-1617104678098-de229db51175?auto=format&fit=crop&w=800&q=80',
+      studio:     'https://images.unsplash.com/photo-1560185009-5bf9f2849488?auto=format&fit=crop&w=800&q=80',
     },
     bg: ['#2a1408','#3d2010','#1a0d04'],
     scene: (w,h) => `
@@ -1099,13 +1107,15 @@ const STYLE_THEMES = {
       'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=900&q=80',
     ],
     roomImages: {
-      living:  'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80',
-      bedroom: 'https://images.unsplash.com/photo-1600210491892-03d54079340e?auto=format&fit=crop&w=800&q=80',
-      kitchen: 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=800&q=80',
-      dining:  'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=800&q=80',
-      office:  'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=800&q=80',
-      bathroom:'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?auto=format&fit=crop&w=800&q=80',
-      kids:    'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=800&q=80',
+      living:     'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80',
+      bedroom:    'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=800&q=80',
+      kitchen:    'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=800&q=80',
+      dining:     'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=800&q=80',
+      office:     'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?auto=format&fit=crop&w=800&q=80',
+      workoffice: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=800&q=80',
+      bathroom:   'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?auto=format&fit=crop&w=800&q=80',
+      kids:       'https://images.unsplash.com/photo-1617104678098-de229db51175?auto=format&fit=crop&w=800&q=80',
+      studio:     'https://images.unsplash.com/photo-1560185009-5bf9f2849488?auto=format&fit=crop&w=800&q=80',
     },
     bg: ['#1e1408','#30200c','#100c04'],
     scene: (w,h) => `
@@ -1783,6 +1793,18 @@ function goPhase3() {
   updateCommitCard();
 }
 
+// ── Wall colour name lookup ────────────────────────────────────
+const WALL_COLOR_NAMES = {
+  '#FFFFFF':'Pure White','#F5F0E8':'Ivory Dust','#F2EDE3':'Warm Cream','#EDE8DE':'Magnolia',
+  '#E8E0D0':'Linen','#DDD5C5':'Greige','#D0C8B8':'Parchment','#C4BCA8':'Sand Stone',
+  '#E8C9A0':'Honey Wheat','#D4A574':'Terracotta Mist','#C4885C':'Burnt Sienna','#B87044':'Rustic Bronze',
+  '#E8D5B0':'Sahara Sand','#D4C090':'Golden Wheat','#C8A870':'Desert Gold','#A87850':'Adobe',
+  '#C8D8C0':'Sage Mist','#A8C4A0':'Eucalyptus','#88A880':'Fern Green','#6A8C68':'Olive Grove',
+  '#B8D0D8':'Morning Sky','#90B8C8':'Coastal Blue','#6898B8':'Denim','#487898':'Aegean',
+  '#2D4A3E':'Forest Night','#1E3A4A':'Midnight Blue','#3A2A4A':'Aubergine','#2D2820':'Charcoal',
+  '#1A1A1A':'Jet Black','#8B2020':'Crimson','#7A5C38':'Mocha','#4A6058':'Dark Teal',
+};
+
 function renderDecisionPreview() {
   const d = state.selectedDesign;
   if (!d) return;
@@ -1792,33 +1814,150 @@ function renderDecisionPreview() {
   const img = document.getElementById('p3RoomImg');
   if (img) { img.src = imgSrc; img.alt = d.name; }
 
-  const nameEl = document.getElementById('p3DesignName');
-  if (nameEl) nameEl.textContent = d.name;
-
   updateP3WallOverlay();
-  updateP3BadgeStrip();
+  updateP3LightingOverlay();
+  updateP3DesignBoard();
 }
 
+/* Wall colour: gradient that paints upper walls strongly, fades over furniture */
 function updateP3WallOverlay() {
   const overlay = document.getElementById('p3WallOverlay');
+  const frame   = document.getElementById('p3ImgFrame');
   if (!overlay) return;
   const c = state.wallColor || '#F5F0E8';
-  overlay.style.background = c;
+
+  // Parse hex to get rgba
   const hex = c.replace('#','');
-  const r = parseInt(hex.substr(0,2),16), g = parseInt(hex.substr(2,2),16), b = parseInt(hex.substr(4,2),16);
-  const luminance = (r*299 + g*587 + b*114) / 1000;
-  overlay.style.opacity = luminance > 200 ? '0.12' : luminance > 100 ? '0.22' : '0.35';
+  const r = parseInt(hex.substr(0,2),16);
+  const g = parseInt(hex.substr(2,2),16);
+  const b = parseInt(hex.substr(4,2),16);
+
+  // Strong gradient: top 40% of image = wall area → heavily tinted
+  overlay.style.background = `linear-gradient(to bottom,
+    rgba(${r},${g},${b},0.72) 0%,
+    rgba(${r},${g},${b},0.45) 30%,
+    rgba(${r},${g},${b},0.08) 55%,
+    transparent 70%)`;
+
+  // Also paint the frame border the wall colour so user clearly sees the choice
+  if (frame) frame.style.borderColor = c;
 }
 
-function updateP3BadgeStrip() {
-  const strip = document.getElementById('p3BadgeStrip');
-  if (!strip) return;
-  strip.innerHTML = [
-    state.wallColor ? `<span class="p3-badge" style="background:${state.wallColor};border:1px solid rgba(0,0,0,.15)">Wall</span>` : '',
-    state.floor ? `<span class="p3-badge">🪵 ${state.floor.replace(/-/g,' ')}</span>` : '',
-    state.sofa?.style ? `<span class="p3-badge">🛋 ${state.sofa.style}</span>` : '',
-    state.lighting ? `<span class="p3-badge">💡 ${state.lighting}</span>` : '',
-  ].filter(Boolean).join('');
+/* Lighting: CSS filter on the photo */
+function updateP3LightingOverlay() {
+  const img = document.getElementById('p3RoomImg');
+  const lo  = document.getElementById('p3LightingOverlay');
+  if (!img) return;
+  const mood = state.lighting || 'warm';
+  const filters = {
+    warm:     'brightness(1.06) saturate(1.15) sepia(0.12)',
+    neutral:  'brightness(1.02) saturate(1.0)',
+    cool:     'brightness(1.08) saturate(0.88) hue-rotate(195deg)',
+    dramatic: 'brightness(0.72) contrast(1.25) saturate(1.3)',
+    rgb:      'brightness(1.0) saturate(1.6) hue-rotate(30deg)',
+  };
+  img.style.filter = filters[mood] || filters.warm;
+  // Tint overlay for lighting mood
+  if (lo) {
+    const tints = {
+      warm:     'rgba(255,200,100,0.08)',
+      neutral:  'transparent',
+      cool:     'rgba(100,160,220,0.08)',
+      dramatic: 'rgba(0,0,0,0.18)',
+      rgb:      'rgba(180,100,255,0.06)',
+    };
+    lo.style.background = tints[mood] || 'transparent';
+  }
+}
+
+/* Design Board — visual summary strip below the photo */
+function updateP3DesignBoard() {
+  const c = state.wallColor || '#F5F0E8';
+  const wallName = WALL_COLOR_NAMES[c.toUpperCase()] || WALL_COLOR_NAMES[c.toLowerCase()] || WALL_COLOR_NAMES[c] || 'Custom';
+  const finish   = (state.wallFinish || 'matte').replace(/-/g,' ');
+
+  const floorVal = state.floor ? state.floor.replace(/-/g,' ') : 'Teak Hardwood';
+
+  const sofaStyle    = state.sofa?.style    || 'Modular';
+  const sofaMaterial = state.sofa?.material || 'Fabric';
+  const sofaColor    = state.sofa?.color    || '#C8C0B0';
+
+  const lightVal = {
+    warm:'Warm White 3000K', neutral:'Neutral 4000K', cool:'Cool 6500K',
+    dramatic:'Dramatic Accent', rgb:'RGB Colour',
+  }[state.lighting || 'warm'] || 'Warm White';
+  const lightType = (state.lightingType || 'recessed').replace(/-/g,' ');
+
+  const curtainStyle = state.curtain?.style || '';
+  const curtainColor = state.curtain?.color || '#F5F0E8';
+  const curtainLabel = curtainStyle ? curtainStyle.replace(/-/g,' ') : 'Not selected';
+
+  const ceilingLabel = (state.ceiling || 'plain').replace(/-/g,' ');
+
+  const _set = (id, val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
+  const _bg  = (id, col) => { const el=document.getElementById(id); if(el) el.style.background=col; };
+
+  _bg('pdbWallSwatch', c);
+  _set('pdbWallVal',   `${wallName} · ${finish}`);
+  _set('pdbFloorVal',  floorVal);
+  _bg('pdbSofaSwatch', sofaColor);
+  _set('pdbSofaVal',   `${sofaStyle} · ${sofaMaterial}`);
+  _set('pdbLightVal',  `${lightVal} · ${lightType}`);
+  _bg('pdbCurtainSwatch', curtainColor);
+  _set('pdbCurtainVal', curtainLabel);
+  _set('pdbCeilingVal', ceilingLabel);
+
+  // Update commit card title with wall name
+  const d = state.selectedDesign || DESIGNS[0];
+  const titleEl = document.getElementById('commitTitle');
+  if (titleEl && d) titleEl.textContent = `${d.name} · ${wallName} walls`;
+}
+
+/* AI re-render: use selected design photo + customisations as Replicate prompt */
+async function triggerP3Rerender() {
+  const btn   = document.getElementById('p3RerenderBtn');
+  const label = document.getElementById('p3RerenderLabel');
+  const img   = document.getElementById('p3RoomImg');
+  if (!img?.src) return;
+
+  btn.disabled = true;
+  label.textContent = '⏳ Rendering…';
+
+  const d    = state.selectedDesign || DESIGNS[0];
+  const room = state.room || 'living';
+  const wallName   = WALL_COLOR_NAMES[state.wallColor?.toUpperCase()] || 'warm white';
+  const floorLabel = (state.floor || 'teak hardwood').replace(/-/g,' ');
+  const sofaLabel  = `${state.sofa?.style || 'modular'} ${state.sofa?.material || 'fabric'} sofa`;
+  const lightLabel = (state.lighting || 'warm') + ' lighting';
+
+  // Fetch the current room image as base64 to send to AI
+  try {
+    const resp = await fetch(img.src);
+    const blob = await resp.blob();
+    const base64 = await new Promise(res => { const r=new FileReader(); r.onload=e=>res(e.target.result); r.readAsDataURL(blob); });
+
+    const customKey = `${d.styleKey}-custom`;
+    const customPrompt = `A beautiful ${room.replace(/-/g,' ')} interior in ${d.name} style, ${wallName} painted walls, ${floorLabel} flooring, ${sofaLabel}, ${lightLabel}, professional interior photography`;
+
+    const { id } = await startPrediction(base64, customKey, room, 0, customPrompt);
+    await pollPrediction(id, (status, url) => {
+      if (url) {
+        // Crossfade in the AI result
+        const newImg = document.getElementById('p3RoomImg');
+        if (newImg) {
+          newImg.style.opacity = '0';
+          newImg.src = url;
+          newImg.onload = () => { newImg.style.opacity = '1'; };
+        }
+        label.textContent = '✦ AI Preview';
+        btn.disabled = false;
+      }
+    });
+  } catch(e) {
+    label.textContent = '✦ AI Preview';
+    btn.disabled = false;
+    console.warn('Re-render failed:', e);
+  }
 }
 
 function renderAIInsights() {
@@ -1833,37 +1972,31 @@ function renderAIInsights() {
 
 function updateCommitCard() {
   const d = state.selectedDesign || DESIGNS[0];
-  const wallLabel = state.wallColor === '#2d2820' ? 'Charcoal' : state.wallColor === '#a8c4c8' ? 'Teal' : state.wallColor === '#1A1A1A' ? 'Black' : 'Warm White';
-  const titleEl = document.getElementById('commitTitle');
-  if (titleEl) titleEl.textContent = `${d.name} · ${wallLabel} walls`;
   const costEl = document.getElementById('commitCost');
   if (costEl) costEl.textContent = d.cost;
   const timeEl = document.getElementById('p3Timeline');
   if (timeEl) timeEl.textContent = d.time;
+  updateP3DesignBoard();
 }
 
 function setWall(color, el) {
-  document.querySelectorAll('.color-sw').forEach(s => s.classList.remove('selected'));
-  el.classList.add('selected');
+  document.querySelectorAll('#wallSwatches .color-sw').forEach(s => s.classList.remove('selected'));
+  if (el) el.classList.add('selected');
   state.wallColor = color;
   updateP3WallOverlay();
-  updateP3BadgeStrip();
-  updateCommitCard();
+  updateP3DesignBoard();
 }
 
 function setWallFinish(finish, btn) {
-  btn.closest('.p3-option-chips').querySelectorAll('.p3-chip').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  if (btn) { btn.closest('.p3-option-chips').querySelectorAll('.p3-chip').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
   state.wallFinish = finish;
-  updateP3BadgeStrip();
+  updateP3DesignBoard();
 }
 
 function setFloor(type, btn) {
-  btn.closest('.p3-option-chips').querySelectorAll('.p3-chip').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  if (btn) { btn.closest('.p3-option-chips').querySelectorAll('.p3-chip').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
   state.floor = type;
-  updateP3BadgeStrip();
-  updateCommitCard();
+  updateP3DesignBoard();
 }
 
 function setSofa(aspect, value, el) {
@@ -1873,14 +2006,13 @@ function setSofa(aspect, value, el) {
     el.classList.add(el.classList.contains('color-sw') ? 'selected' : 'active');
   }
   state.sofa[aspect] = value;
-  updateP3BadgeStrip();
+  updateP3DesignBoard();
 }
 
 function setLightingType(type, btn) {
-  btn.closest('.p3-option-chips').querySelectorAll('.p3-chip').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  if (btn) { btn.closest('.p3-option-chips').querySelectorAll('.p3-chip').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
   state.lightingType = type;
-  updateP3BadgeStrip();
+  updateP3DesignBoard();
 }
 
 function setCurtain(aspect, value, el) {
@@ -1890,7 +2022,7 @@ function setCurtain(aspect, value, el) {
     el.classList.add(el.classList.contains('color-sw') ? 'selected' : 'active');
   }
   state.curtain[aspect] = value;
-  updateP3BadgeStrip();
+  updateP3DesignBoard();
 }
 
 function setRug(aspect, value, btn) {
@@ -1900,12 +2032,13 @@ function setRug(aspect, value, btn) {
     btn.classList.add('active');
   }
   state.rug[aspect] = value;
+  updateP3DesignBoard();
 }
 
 function setCeiling(type, btn) {
-  btn.closest('.p3-option-chips').querySelectorAll('.p3-chip').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  if (btn) { btn.closest('.p3-option-chips').querySelectorAll('.p3-chip').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
   state.ceiling = type;
+  updateP3DesignBoard();
 }
 
 function setFurniture(type, val, btn) {
@@ -1924,13 +2057,14 @@ function setLighting(mood, btn) {
     btn.classList.add('active');
   }
   state.lighting = mood;
-  updateP3BadgeStrip();
+  updateP3LightingOverlay();
+  updateP3DesignBoard();
 }
 
 function toggleDecor(key, val) {
   if (!state.decor) state.decor = {};
-  state.decor[key] = val;
-  updateP3BadgeStrip();
+  state.decor[key] = !state.decor[key];
+  updateP3DesignBoard();
 }
 
 /* ═══════════════════════════════════════════════════════════════

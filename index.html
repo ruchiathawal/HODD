@@ -456,7 +456,8 @@
       <div class="p2-cards-col">
         <div class="p2-cards-toolbar">
           <span class="fav-count" id="favCount">0 saved</span>
-          <div style="display:flex;gap:.5rem">
+          <div style="display:flex;gap:.5rem;align-items:center">
+            <span class="compare-hint" id="compareHint" style="font-size:.68rem;color:var(--muted);white-space:nowrap">Select 2–3 to compare</span>
             <button class="tool-btn" id="compareBtn" onclick="toggleCompare()" disabled>⇄ Compare</button>
             <button class="tool-btn" onclick="exportPDF()">↓ PDF</button>
           </div>
@@ -490,15 +491,46 @@
     <div class="p3-body">
       <!-- LEFT: live room preview -->
       <div class="p3-preview-col">
+        <!-- Room photo with wall-paint gradient overlay -->
         <div class="p3-img-frame" id="p3ImgFrame">
           <img id="p3RoomImg" src="" alt="Your design" />
-          <!-- Wall colour overlay -->
           <div class="p3-wall-overlay" id="p3WallOverlay"></div>
-          <!-- Config badge strip -->
-          <div class="p3-badge-strip" id="p3BadgeStrip"></div>
+          <div class="p3-lighting-overlay" id="p3LightingOverlay"></div>
+          <!-- AI re-render button floated over image -->
+          <button class="p3-rerender-btn" id="p3RerenderBtn" onclick="triggerP3Rerender()" title="Generate AI preview with your selections">
+            <span id="p3RerenderLabel">✦ AI Preview</span>
+          </button>
         </div>
-        <div class="p3-design-name" id="p3DesignName"></div>
-        <!-- Commit card -->
+
+        <!-- Live Design Board — updates on every selection -->
+        <div class="p3-design-board" id="p3DesignBoard">
+          <div class="pdb-row" id="pdbWall">
+            <div class="pdb-swatch" id="pdbWallSwatch" style="background:#F5F0E8"></div>
+            <div class="pdb-info"><div class="pdb-label">Wall</div><div class="pdb-val" id="pdbWallVal">Ivory Dust · Matte</div></div>
+          </div>
+          <div class="pdb-row" id="pdbFloor">
+            <div class="pdb-icon">🪵</div>
+            <div class="pdb-info"><div class="pdb-label">Floor</div><div class="pdb-val" id="pdbFloorVal">Teak Hardwood</div></div>
+          </div>
+          <div class="pdb-row" id="pdbSofa">
+            <div class="pdb-swatch" id="pdbSofaSwatch" style="background:#C8C0B0"></div>
+            <div class="pdb-info"><div class="pdb-label">Sofa</div><div class="pdb-val" id="pdbSofaVal">Modular · Fabric</div></div>
+          </div>
+          <div class="pdb-row" id="pdbLight">
+            <div class="pdb-icon">💡</div>
+            <div class="pdb-info"><div class="pdb-label">Lighting</div><div class="pdb-val" id="pdbLightVal">Warm White 3000K</div></div>
+          </div>
+          <div class="pdb-row" id="pdbCurtain">
+            <div class="pdb-swatch" id="pdbCurtainSwatch" style="background:#F5F0E8"></div>
+            <div class="pdb-info"><div class="pdb-label">Curtains</div><div class="pdb-val" id="pdbCurtainVal">Not selected</div></div>
+          </div>
+          <div class="pdb-row" id="pdbCeiling">
+            <div class="pdb-icon">🏠</div>
+            <div class="pdb-info"><div class="pdb-label">Ceiling</div><div class="pdb-val" id="pdbCeilingVal">Plain / Painted</div></div>
+          </div>
+        </div>
+
+        <!-- Cost + lock card -->
         <div class="commit-card" id="commitCard">
           <div class="commit-badge">🔥 Most Popular Choice</div>
           <div class="commit-title" id="commitTitle">Japandi with Warm White walls</div>
@@ -945,6 +977,6 @@
 </section>
 
 <script src="firebase.js"></script>
-<script src="app.js?v=7"></script>
+<script src="app.js?v=20"></script>
 </body>
 </html>
