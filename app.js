@@ -1338,8 +1338,8 @@ function goPhase2() {
    AI RENDER ENGINE  (Replicate via Netlify Functions)
 ═══════════════════════════════════════════════════════════════ */
 
-// Resize image to max 768px before sending to API (saves cost + time)
-function resizeImageForAI(dataUrl, maxSize = 768) {
+// Resize image to max 512px before sending to API — faster render, smaller payload
+function resizeImageForAI(dataUrl, maxSize = 512) {
   return new Promise(resolve => {
     const img = new Image();
     img.onload = () => {
@@ -1368,7 +1368,7 @@ async function startPrediction(imageBase64, styleKey, roomType, variationIndex, 
 async function pollPrediction(id, onUpdate, maxWait = 120000) {
   const start = Date.now();
   while (Date.now() - start < maxWait) {
-    await new Promise(r => setTimeout(r, 3000));
+    await new Promise(r => setTimeout(r, 2000));
     const res = await fetch(`/.netlify/functions/render-poll?id=${id}`);
     const data = await res.json();
     onUpdate(data);
@@ -1392,7 +1392,7 @@ async function startAIRenders() {
       // Pick the top design's room image as the AI base
       const topTheme = STYLE_THEMES[rankedDesigns[0]?.styleKey] || STYLE_THEMES['japandi'];
       const fallbackUrl = topTheme.roomImages?.[roomType] || topTheme.img ||
-        'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=768&q=80';
+        'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=512&q=80';
       const resp = await fetch(fallbackUrl);
       const blob = await resp.blob();
       baseImageDataUrl = await new Promise(res => {

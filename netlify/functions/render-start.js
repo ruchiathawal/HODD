@@ -107,9 +107,9 @@ exports.handler = async (event) => {
             image: imageBase64,
             prompt: fullPrompt,
             negative_prompt: NEGATIVE_PROMPT,
-            guidance_scale: 15,
-            num_inference_steps: 50,   // higher = better quality
-            strength: 0.75,            // 0.75 preserves room layout while changing style
+            guidance_scale: 12,
+            num_inference_steps: 20,   // 20 steps = ~15-20s vs 50 steps = ~45-60s
+            strength: 0.75,
             scheduler: 'DPMSolverMultistep',
           },
         }),
