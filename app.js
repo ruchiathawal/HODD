@@ -384,7 +384,70 @@ function drawFurniture(ctx, rx, ry, rw, rh, shape, room) {
     ctx.fillStyle = '#16100a'; ctx.fill();
   }
 
+  // Draw user-selected existing and wanted furniture
+  const allSelected = [...(state.furniture.existing || []), ...(state.furniture.wanted || [])];
+  if (allSelected.length) {
+    const c2 = '#d4a050';
+    ctx.globalAlpha = 0.35;
+    // Place items in a row along the bottom-right area
+    const positions = [
+      { cx: wall.right - 20, cy: wall.bottom - 20 },
+      { cx: wall.right - 50, cy: wall.bottom - 20 },
+      { cx: wall.right - 80, cy: wall.bottom - 20 },
+      { cx: wall.right - 20, cy: wall.bottom - 50 },
+      { cx: wall.right - 50, cy: wall.bottom - 50 },
+      { cx: wall.right - 80, cy: wall.bottom - 50 },
+    ];
+    allSelected.slice(0, positions.length).forEach((key, i) => {
+      const { cx, cy } = positions[i];
+      drawFurnitureItem(ctx, key, cx, cy, Math.min(rw, rh) / 200, c2);
+    });
+  }
+
   ctx.restore();
+}
+
+function drawFurnitureItem(ctx, key, cx, cy, scale, color) {
+  const s = Math.max(scale * 40, 14);
+  ctx.fillStyle = color;
+  switch (key) {
+    case 'sofa':
+      roundRect(ctx, cx - s, cy - s*0.4, s*2, s*0.8, 4, color);
+      ctx.fillRect(cx - s, cy - s*0.4, s*2, s*0.2); break;
+    case 'bed':
+      ctx.fillRect(cx - s*0.7, cy - s*0.9, s*1.4, s*1.6);
+      ctx.globalAlpha *= 1.5; ctx.fillRect(cx - s*0.7, cy - s*0.9, s*1.4, s*0.3); ctx.globalAlpha /= 1.5; break;
+    case 'wardrobe':
+      ctx.fillRect(cx - s, cy - s*0.7, s*2, s*1.4);
+      ctx.strokeStyle = color; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(cx, cy - s*0.7); ctx.lineTo(cx, cy + s*0.7); ctx.stroke(); break;
+    case 'tv-unit':
+      ctx.fillRect(cx - s, cy - s*0.25, s*2, s*0.5); break;
+    case 'desk':
+      ctx.fillRect(cx - s*0.7, cy - s*0.5, s*1.4, s); break;
+    case 'bookshelf':
+      ctx.fillRect(cx - s*0.6, cy - s*0.8, s*1.2, s*1.6);
+      ctx.strokeStyle = color; ctx.lineWidth = 0.5;
+      for (let r2 = 0; r2 < 3; r2++) { ctx.beginPath(); ctx.moveTo(cx - s*0.6, cy - s*0.8 + r2*(s*1.6/3)); ctx.lineTo(cx + s*0.6, cy - s*0.8 + r2*(s*1.6/3)); ctx.stroke(); } break;
+    case 'dining-table':
+      ctx.fillRect(cx - s*0.6, cy - s*0.4, s*1.2, s*0.8);
+      [[cx - s*0.9, cy - s*0.3],[cx + s*0.7, cy - s*0.3],[cx - s*0.9, cy + s*0.1],[cx + s*0.7, cy + s*0.1]]
+        .forEach(([x,y]) => ctx.fillRect(x, y, s*0.25, s*0.25)); break;
+    case 'center-table':
+      roundRect(ctx, cx - s*0.6, cy - s*0.35, s*1.2, s*0.7, 4, color); break;
+    case 'accent-chair':
+      ctx.beginPath(); ctx.arc(cx, cy, s*0.45, 0, Math.PI*2); ctx.fill(); break;
+    case 'storage':
+      ctx.setLineDash([3,3]); ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+      ctx.strokeRect(cx - s*0.6, cy - s*0.5, s*1.2, s); ctx.setLineDash([]); break;
+    case 'side-table':
+      roundRect(ctx, cx - s*0.3, cy - s*0.3, s*0.6, s*0.6, 3, color); break;
+    case 'lounge-chair':
+      roundRect(ctx, cx - s*0.45, cy - s*0.45, s*0.9, s*0.9, 5, color); break;
+    case 'shoe-rack':
+      ctx.fillRect(cx - s*0.7, cy - s*0.15, s*1.4, s*0.3); break;
+    default:
+      ctx.fillRect(cx - s*0.5, cy - s*0.5, s, s); break;
+  }
 }
 
 function roundRect(ctx, x, y, w, h, r, color) {
@@ -433,6 +496,14 @@ function toggleFurniture(type, key, btn) {
   const idx = arr.indexOf(key);
   if (idx === -1) { arr.push(key); btn.classList.add('furn-active'); }
   else { arr.splice(idx, 1); btn.classList.remove('furn-active'); }
+  // Cross-list logic: if selecting 'existing', hide matching chip in 'wanted'
+  if (type === 'existing') {
+    const wantedChip = document.querySelector(`#wantedFurnitureChips [data-furn="${key}"]`);
+    if (wantedChip) {
+      const isSelected = idx === -1; // just added
+      wantedChip.classList.toggle('furn-hidden', isSelected);
+    }
+  }
   drawRoomLayout(); // update canvas to show furniture
   autosave();
 }
@@ -612,6 +683,22 @@ const STYLE_THEMES = {
     name: 'Japandi', tag: 'Wabi-sabi calm · neutral warmth',
     palette: ['#d4c5b0','#8b7d6b','#5a4e3f','#2d2820','#c8bba8'],
     img: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=600&q=80',
+    variations: [
+      'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1567016432779-094069958ea5?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1600210491892-03d54079340e?auto=format&fit=crop&w=900&q=80',
+    ],
+    roomImages: {
+      living:  'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=800&q=80',
+      bedroom: 'https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&w=800&q=80',
+      kitchen: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=800&q=80',
+      dining:  'https://images.unsplash.com/photo-1567016432779-094069958ea5?auto=format&fit=crop&w=800&q=80',
+      office:  'https://images.unsplash.com/photo-1600210491892-03d54079340e?auto=format&fit=crop&w=800&q=80',
+      bathroom:'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?auto=format&fit=crop&w=800&q=80',
+      kids:    'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80',
+    },
     bg: ['#2a2218','#3d3120','#1a1510'],
     scene: (w,h) => `
       <!-- Japandi: low platform sofa, bamboo plant, shoji-screen light, minimal art -->
@@ -719,6 +806,22 @@ const STYLE_THEMES = {
     name: 'Contemporary', tag: 'Bold contrast · curated eclecticism',
     palette: ['#e8e0d4','#b8a898','#6b5c50','#3d2e28','#7a9898'],
     img: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=600&q=80',
+    variations: [
+      'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1560448204-603b3fc33ddc?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1631679706909-1844bbd07221?auto=format&fit=crop&w=900&q=80',
+    ],
+    roomImages: {
+      living:  'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80',
+      bedroom: 'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&w=800&q=80',
+      kitchen: 'https://images.unsplash.com/photo-1560448204-603b3fc33ddc?auto=format&fit=crop&w=800&q=80',
+      dining:  'https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&w=800&q=80',
+      office:  'https://images.unsplash.com/photo-1631679706909-1844bbd07221?auto=format&fit=crop&w=800&q=80',
+      bathroom:'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?auto=format&fit=crop&w=800&q=80',
+      kids:    'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80',
+    },
     bg: ['#1e1a16','#2e2820','#131008'],
     scene: (w,h) => `
       <!-- Contemporary: bold geometric art, mixed materials, statement furniture -->
@@ -834,6 +937,22 @@ const STYLE_THEMES = {
     name: 'Luxury Modern', tag: 'Opulent materials · dramatic scale',
     palette: ['#c4b0e0','#9b7fd4','#6b3fa8','#2d1458','#f0d080'],
     img: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=600&q=80',
+    variations: [
+      'https://images.unsplash.com/photo-1631679706909-1844bbd07221?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1615529328331-f8917597711f?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1618219908412-a29a1bb7b86e?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1600607687644-aac4c3eac7f4?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1600121848594-d8644e57abab?auto=format&fit=crop&w=900&q=80',
+    ],
+    roomImages: {
+      living:  'https://images.unsplash.com/photo-1631679706909-1844bbd07221?auto=format&fit=crop&w=800&q=80',
+      bedroom: 'https://images.unsplash.com/photo-1615529328331-f8917597711f?auto=format&fit=crop&w=800&q=80',
+      kitchen: 'https://images.unsplash.com/photo-1618219908412-a29a1bb7b86e?auto=format&fit=crop&w=800&q=80',
+      dining:  'https://images.unsplash.com/photo-1600607687644-aac4c3eac7f4?auto=format&fit=crop&w=800&q=80',
+      office:  'https://images.unsplash.com/photo-1600121848594-d8644e57abab?auto=format&fit=crop&w=800&q=80',
+      bathroom:'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?auto=format&fit=crop&w=800&q=80',
+      kids:    'https://images.unsplash.com/photo-1560448204-603b3fc33ddc?auto=format&fit=crop&w=800&q=80',
+    },
     bg: ['#1a0a2e','#2d1458','#0a0418'],
     scene: (w,h) => `
       <!-- Luxury Modern: dramatic dark, gold accents, chandelier, velvet sofa, marble -->
@@ -910,6 +1029,22 @@ const STYLE_THEMES = {
     name: 'Indian Modern', tag: 'Teak & brass · rich heritage tones',
     palette: ['#e8a870','#c97c4a','#8b4513','#4a2010','#d4a844'],
     img: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=600&q=80',
+    variations: [
+      'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1618220179428-22790b461013?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1585412727339-54e4bae3bbf9?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=900&q=80',
+    ],
+    roomImages: {
+      living:  'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=800&q=80',
+      bedroom: 'https://images.unsplash.com/photo-1618220179428-22790b461013?auto=format&fit=crop&w=800&q=80',
+      kitchen: 'https://images.unsplash.com/photo-1585412727339-54e4bae3bbf9?auto=format&fit=crop&w=800&q=80',
+      dining:  'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=800&q=80',
+      office:  'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80',
+      bathroom:'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?auto=format&fit=crop&w=800&q=80',
+      kids:    'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=800&q=80',
+    },
     bg: ['#2a1408','#3d2010','#1a0d04'],
     scene: (w,h) => `
       <!-- Indian Modern: teak furniture, brass lamps, block prints, warm amber -->
@@ -956,6 +1091,22 @@ const STYLE_THEMES = {
     name: 'Earthy Organic', tag: 'Nature-first · abundant greenery',
     palette: ['#c8a878','#8b6840','#4a7a3a','#2a5020','#c87858'],
     img: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=600&q=80',
+    variations: [
+      'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1600210491892-03d54079340e?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=900&q=80',
+    ],
+    roomImages: {
+      living:  'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80',
+      bedroom: 'https://images.unsplash.com/photo-1600210491892-03d54079340e?auto=format&fit=crop&w=800&q=80',
+      kitchen: 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=800&q=80',
+      dining:  'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=800&q=80',
+      office:  'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=800&q=80',
+      bathroom:'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?auto=format&fit=crop&w=800&q=80',
+      kids:    'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=800&q=80',
+    },
     bg: ['#1e1408','#30200c','#100c04'],
     scene: (w,h) => `
       <!-- Earthy Organic: plants everywhere, rattan, jute, terracotta, warm earth -->
@@ -1349,7 +1500,7 @@ function renderDesignCards() {
     const isCompared = state.compareDesigns.has(d.id);
     const isSelected = state.selectedDesign?.id === d.id || (i === 0 && !state.selectedDesign);
     const theme = STYLE_THEMES[d.styleKey] || STYLE_THEMES['japandi'];
-    const imgSrc = d.img || theme.img || '';
+    const imgSrc = theme.roomImages?.[state.room] || d.img || theme.img || '';
 
     // Palette
     const palette = theme.palette || ['#d4c5b0','#8b7d6b','#5a4e3f','#2d2820'];
@@ -1398,7 +1549,7 @@ let _p2ActiveImgSlot = 'a'; // crossfade between two img elements
 function p2SetPreview(d, lock = false) {
   if (!d) return;
   const theme = STYLE_THEMES[d.styleKey] || STYLE_THEMES['japandi'];
-  const imgSrc = d.img || theme.img || '';
+  const imgSrc = theme.roomImages?.[state.room] || d.img || theme.img || '';
   const palette = theme.palette || [];
 
   // Crossfade image
@@ -1456,6 +1607,28 @@ function p2SetPreview(d, lock = false) {
   document.querySelectorAll('.design-card-compact').forEach(c => {
     c.classList.toggle('dcc-active', parseInt(c.dataset.designId) === d.id);
   });
+
+  // Variations strip (Change 3)
+  const varStrip = document.getElementById('p2VariationsStrip');
+  const varThumbs = document.getElementById('p2VarThumbs');
+  if (varStrip && varThumbs && theme?.variations) {
+    varStrip.classList.remove('hidden');
+    varThumbs.innerHTML = theme.variations.map((url, i) =>
+      `<img class="p2-var-thumb${i===0?' active':''}" src="${url}" onclick="p2SwapVariation('${url}', this)" loading="lazy" />`
+    ).join('');
+  }
+}
+
+function p2SwapVariation(url, el) {
+  document.querySelectorAll('.p2-var-thumb').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  const imgA = document.getElementById('p2ImgA');
+  const imgB = document.getElementById('p2ImgB');
+  const next = _p2ActiveImgSlot === 'a' ? imgB : imgA;
+  const curr = _p2ActiveImgSlot === 'a' ? imgA : imgB;
+  next.src = url;
+  next.onload = () => { next.classList.add('active'); curr.classList.remove('active'); _p2ActiveImgSlot = _p2ActiveImgSlot === 'a' ? 'b' : 'a'; };
+  if (next.complete && next.naturalWidth) { next.classList.add('active'); curr.classList.remove('active'); _p2ActiveImgSlot = _p2ActiveImgSlot === 'a' ? 'b' : 'a'; }
 }
 
 function confirmDesignAndNext() {
@@ -1612,9 +1785,40 @@ function goPhase3() {
 
 function renderDecisionPreview() {
   const d = state.selectedDesign;
-  document.getElementById('decisionPreview').innerHTML = drawRoomSVG(
-    d.bg, d.furniture, d.accent, state.wallColor, state.lighting, state.decor
-  );
+  if (!d) return;
+  const theme = STYLE_THEMES[d.styleKey] || STYLE_THEMES['japandi'];
+  const imgSrc = theme.roomImages?.[state.room] || d.img || theme.img || '';
+
+  const img = document.getElementById('p3RoomImg');
+  if (img) { img.src = imgSrc; img.alt = d.name; }
+
+  const nameEl = document.getElementById('p3DesignName');
+  if (nameEl) nameEl.textContent = d.name;
+
+  updateP3WallOverlay();
+  updateP3BadgeStrip();
+}
+
+function updateP3WallOverlay() {
+  const overlay = document.getElementById('p3WallOverlay');
+  if (!overlay) return;
+  const c = state.wallColor || '#F5F0E8';
+  overlay.style.background = c;
+  const hex = c.replace('#','');
+  const r = parseInt(hex.substr(0,2),16), g = parseInt(hex.substr(2,2),16), b = parseInt(hex.substr(4,2),16);
+  const luminance = (r*299 + g*587 + b*114) / 1000;
+  overlay.style.opacity = luminance > 200 ? '0.12' : luminance > 100 ? '0.22' : '0.35';
+}
+
+function updateP3BadgeStrip() {
+  const strip = document.getElementById('p3BadgeStrip');
+  if (!strip) return;
+  strip.innerHTML = [
+    state.wallColor ? `<span class="p3-badge" style="background:${state.wallColor};border:1px solid rgba(0,0,0,.15)">Wall</span>` : '',
+    state.floor ? `<span class="p3-badge">🪵 ${state.floor.replace(/-/g,' ')}</span>` : '',
+    state.sofa?.style ? `<span class="p3-badge">🛋 ${state.sofa.style}</span>` : '',
+    state.lighting ? `<span class="p3-badge">💡 ${state.lighting}</span>` : '',
+  ].filter(Boolean).join('');
 }
 
 function renderAIInsights() {
@@ -1629,36 +1833,104 @@ function renderAIInsights() {
 
 function updateCommitCard() {
   const d = state.selectedDesign || DESIGNS[0];
-  document.getElementById('commitTitle').textContent = `${d.name} · ${state.wallColor === '#2d2820' ? 'Charcoal' : state.wallColor === '#a8c4c8' ? 'Teal' : 'Light'} walls`;
-  document.getElementById('commitCost').textContent = d.cost;
+  const wallLabel = state.wallColor === '#2d2820' ? 'Charcoal' : state.wallColor === '#a8c4c8' ? 'Teal' : state.wallColor === '#1A1A1A' ? 'Black' : 'Warm White';
+  const titleEl = document.getElementById('commitTitle');
+  if (titleEl) titleEl.textContent = `${d.name} · ${wallLabel} walls`;
+  const costEl = document.getElementById('commitCost');
+  if (costEl) costEl.textContent = d.cost;
+  const timeEl = document.getElementById('p3Timeline');
+  if (timeEl) timeEl.textContent = d.time;
 }
 
 function setWall(color, el) {
   document.querySelectorAll('.color-sw').forEach(s => s.classList.remove('selected'));
   el.classList.add('selected');
   state.wallColor = color;
-  renderDecisionPreview();
+  updateP3WallOverlay();
+  updateP3BadgeStrip();
   updateCommitCard();
 }
 
-function setFurniture(type, val, btn) {
-  const group = btn.closest('.swap-options');
-  group.querySelectorAll('.swap-btn').forEach(b => b.classList.remove('active'));
+function setWallFinish(finish, btn) {
+  btn.closest('.p3-option-chips').querySelectorAll('.p3-chip').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  state.wallFinish = finish;
+  updateP3BadgeStrip();
+}
+
+function setFloor(type, btn) {
+  btn.closest('.p3-option-chips').querySelectorAll('.p3-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.floor = type;
+  updateP3BadgeStrip();
+  updateCommitCard();
+}
+
+function setSofa(aspect, value, el) {
+  if (!state.sofa) state.sofa = {};
+  if (el) {
+    el.closest('.p3-option-chips, .p3-color-grid')?.querySelectorAll('.p3-chip, .color-sw').forEach(b => b.classList.remove('active','selected'));
+    el.classList.add(el.classList.contains('color-sw') ? 'selected' : 'active');
+  }
+  state.sofa[aspect] = value;
+  updateP3BadgeStrip();
+}
+
+function setLightingType(type, btn) {
+  btn.closest('.p3-option-chips').querySelectorAll('.p3-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.lightingType = type;
+  updateP3BadgeStrip();
+}
+
+function setCurtain(aspect, value, el) {
+  if (!state.curtain) state.curtain = {};
+  if (el) {
+    el.closest('.p3-option-chips, .p3-color-grid')?.querySelectorAll('.p3-chip, .color-sw').forEach(b => b.classList.remove('active','selected'));
+    el.classList.add(el.classList.contains('color-sw') ? 'selected' : 'active');
+  }
+  state.curtain[aspect] = value;
+  updateP3BadgeStrip();
+}
+
+function setRug(aspect, value, btn) {
+  if (!state.rug) state.rug = {};
+  if (btn) {
+    btn.closest('.p3-option-chips').querySelectorAll('.p3-chip').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  state.rug[aspect] = value;
+}
+
+function setCeiling(type, btn) {
+  btn.closest('.p3-option-chips').querySelectorAll('.p3-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.ceiling = type;
+}
+
+function setFurniture(type, val, btn) {
+  if (btn) {
+    const group = btn.closest('.swap-options');
+    if (group) group.querySelectorAll('.swap-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
   state[type] = val;
-  renderDecisionPreview();
 }
 
 function setLighting(mood, btn) {
-  btn.closest('.swap-options').querySelectorAll('.swap-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  if (btn) {
+    const g = btn.closest('.swap-options, .p3-option-chips');
+    if (g) g.querySelectorAll('.swap-btn, .p3-chip').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
   state.lighting = mood;
-  renderDecisionPreview();
+  updateP3BadgeStrip();
 }
 
 function toggleDecor(key, val) {
+  if (!state.decor) state.decor = {};
   state.decor[key] = val;
-  renderDecisionPreview();
+  updateP3BadgeStrip();
 }
 
 /* ═══════════════════════════════════════════════════════════════

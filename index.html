@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>HODD — Dream it. Design it. Own it.</title>
-  <link rel="stylesheet" href="style.css?v=18" />
+  <link rel="stylesheet" href="style.css?v=19" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
 
@@ -437,6 +437,12 @@
         <!-- Materials strip -->
         <div class="p2-mat-strip" id="p2MatStrip"></div>
 
+        <!-- Variations strip (Change 3) -->
+        <div class="p2-variations-strip hidden" id="p2VariationsStrip">
+          <div class="p2-var-label">5 looks in this style →</div>
+          <div class="p2-var-thumbs" id="p2VarThumbs"></div>
+        </div>
+
         <!-- Description -->
         <p class="p2-desc" id="p2Desc"></p>
 
@@ -481,73 +487,23 @@
       <p>Lock in your theme, set your budget, and tweak every detail until it feels exactly right.</p>
     </div>
 
-    <div class="decision-layout">
-      <!-- Live preview -->
-      <div class="decision-preview-wrap">
-        <div class="decision-preview" id="decisionPreview"></div>
-        <div class="ai-insights" id="aiInsights">
-          <!-- populated by JS -->
+    <div class="p3-body">
+      <!-- LEFT: live room preview -->
+      <div class="p3-preview-col">
+        <div class="p3-img-frame" id="p3ImgFrame">
+          <img id="p3RoomImg" src="" alt="Your design" />
+          <!-- Wall colour overlay -->
+          <div class="p3-wall-overlay" id="p3WallOverlay"></div>
+          <!-- Config badge strip -->
+          <div class="p3-badge-strip" id="p3BadgeStrip"></div>
         </div>
-      </div>
-
-      <!-- Controls -->
-      <div class="decision-controls">
-        <div class="control-group">
-          <div class="control-title">🎨 Wall Colour</div>
-          <div class="color-swatches" id="wallSwatches">
-            <div class="color-sw selected" style="background:#f5ede0" onclick="setWall('#f5ede0',this)" title="Warm White"></div>
-            <div class="color-sw" style="background:#ddd5c8" onclick="setWall('#ddd5c8',this)" title="Linen"></div>
-            <div class="color-sw" style="background:#c4b8a8" onclick="setWall('#c4b8a8',this)" title="Greige"></div>
-            <div class="color-sw" style="background:#a8c4c8" onclick="setWall('#a8c4c8',this)" title="Muted Teal"></div>
-            <div class="color-sw" style="background:#c8c4a8" onclick="setWall('#c8c4a8',this)" title="Sage"></div>
-            <div class="color-sw" style="background:#2d2820" onclick="setWall('#2d2820',this)" title="Charcoal"></div>
-          </div>
-        </div>
-
-        <div class="control-group">
-          <div class="control-title">🛋 Sofa Style</div>
-          <div class="swap-options" id="sofaOptions">
-            <button class="swap-btn active" onclick="setFurniture('sofa','modular',this)">Modular</button>
-            <button class="swap-btn" onclick="setFurniture('sofa','lshape',this)">L-Shape</button>
-            <button class="swap-btn" onclick="setFurniture('sofa','loveseat',this)">Loveseat</button>
-            <button class="swap-btn" onclick="setFurniture('sofa','sectional',this)">Sectional</button>
-          </div>
-        </div>
-
-        <div class="control-group">
-          <div class="control-title">🪵 Flooring</div>
-          <div class="swap-options">
-            <button class="swap-btn active" onclick="setFurniture('floor','wood',this)">Hardwood</button>
-            <button class="swap-btn" onclick="setFurniture('floor','marble',this)">Marble</button>
-            <button class="swap-btn" onclick="setFurniture('floor','tile',this)">Tile</button>
-            <button class="swap-btn" onclick="setFurniture('floor','rug',this)">Rug over Tile</button>
-          </div>
-        </div>
-
-        <div class="control-group">
-          <div class="control-title">💡 Lighting Mood</div>
-          <div class="swap-options">
-            <button class="swap-btn active" onclick="setLighting('warm',this)">☀ Warm</button>
-            <button class="swap-btn" onclick="setLighting('cool',this)">❄ Cool</button>
-            <button class="swap-btn" onclick="setLighting('dramatic',this)">🌙 Dramatic</button>
-          </div>
-        </div>
-
-        <div class="control-group">
-          <div class="control-title">🛋 Decor Toggles</div>
-          <div class="toggle-row">
-            <label class="toggle-item"><input type="checkbox" checked onchange="toggleDecor('plant',this.checked)"><span>Plants</span></label>
-            <label class="toggle-item"><input type="checkbox" checked onchange="toggleDecor('art',this.checked)"><span>Wall Art</span></label>
-            <label class="toggle-item"><input type="checkbox" onchange="toggleDecor('rug',this.checked)"><span>Area Rug</span></label>
-            <label class="toggle-item"><input type="checkbox" onchange="toggleDecor('curtains',this.checked)"><span>Curtains</span></label>
-          </div>
-        </div>
-
+        <div class="p3-design-name" id="p3DesignName"></div>
+        <!-- Commit card -->
         <div class="commit-card" id="commitCard">
           <div class="commit-badge">🔥 Most Popular Choice</div>
           <div class="commit-title" id="commitTitle">Japandi with Warm White walls</div>
           <div class="commit-meta">
-            <span>⏱ 3–4 weeks</span>
+            <span>⏱ <span id="p3Timeline">3–4 weeks</span></span>
             <span>💰 <span id="commitCost">₹2,40,000</span></span>
           </div>
           <div class="commit-savings" id="commitSavings">💡 Saves 18% vs similar designs</div>
@@ -555,8 +511,295 @@
             Lock This Design →
           </button>
         </div>
+        <div class="ai-insights" id="aiInsights"></div>
       </div>
-    </div>
+
+      <!-- RIGHT: config options (scrollable) -->
+      <div class="p3-config-col">
+
+        <!-- WALL COLOUR -->
+        <div class="p3-section">
+          <div class="p3-section-title">🎨 Wall Colour &amp; Finish</div>
+          <div class="p3-sub-label">Whites &amp; Neutrals</div>
+          <div class="p3-color-grid" id="wallSwatches">
+            <div class="color-sw selected" style="background:#FFFFFF" onclick="setWall('#FFFFFF',this)" title="Pure White · AP 7076"></div>
+            <div class="color-sw" style="background:#F5F0E8" onclick="setWall('#F5F0E8',this)" title="Ivory Dust · AP 7024"></div>
+            <div class="color-sw" style="background:#F2EDE3" onclick="setWall('#F2EDE3',this)" title="Warm Cream · AP 7031"></div>
+            <div class="color-sw" style="background:#EDE8DE" onclick="setWall('#EDE8DE',this)" title="Magnolia · AP 7040"></div>
+            <div class="color-sw" style="background:#E8E0D0" onclick="setWall('#E8E0D0',this)" title="Linen · AP 7022"></div>
+            <div class="color-sw" style="background:#DDD5C5" onclick="setWall('#DDD5C5',this)" title="Greige · AP 7018"></div>
+            <div class="color-sw" style="background:#D0C8B8" onclick="setWall('#D0C8B8',this)" title="Parchment · AP 7048"></div>
+            <div class="color-sw" style="background:#C4BCA8" onclick="setWall('#C4BCA8',this)" title="Sand Stone · AP 7052"></div>
+          </div>
+          <div class="p3-sub-label" style="margin-top:.6rem">Warm &amp; Earth Tones</div>
+          <div class="p3-color-grid">
+            <div class="color-sw" style="background:#E8C9A0" onclick="setWall('#E8C9A0',this)" title="Honey Wheat"></div>
+            <div class="color-sw" style="background:#D4A574" onclick="setWall('#D4A574',this)" title="Terracotta Mist"></div>
+            <div class="color-sw" style="background:#C4885C" onclick="setWall('#C4885C',this)" title="Burnt Sienna"></div>
+            <div class="color-sw" style="background:#B87044" onclick="setWall('#B87044',this)" title="Rustic Bronze"></div>
+            <div class="color-sw" style="background:#E8D5B0" onclick="setWall('#E8D5B0',this)" title="Sahara Sand"></div>
+            <div class="color-sw" style="background:#D4C090" onclick="setWall('#D4C090',this)" title="Golden Wheat"></div>
+            <div class="color-sw" style="background:#C8A870" onclick="setWall('#C8A870',this)" title="Desert Gold"></div>
+            <div class="color-sw" style="background:#A87850" onclick="setWall('#A87850',this)" title="Adobe"></div>
+          </div>
+          <div class="p3-sub-label" style="margin-top:.6rem">Greens &amp; Blues</div>
+          <div class="p3-color-grid">
+            <div class="color-sw" style="background:#C8D8C0" onclick="setWall('#C8D8C0',this)" title="Sage Mist"></div>
+            <div class="color-sw" style="background:#A8C4A0" onclick="setWall('#A8C4A0',this)" title="Eucalyptus"></div>
+            <div class="color-sw" style="background:#88A880" onclick="setWall('#88A880',this)" title="Fern Green"></div>
+            <div class="color-sw" style="background:#6A8C68" onclick="setWall('#6A8C68',this)" title="Olive Grove"></div>
+            <div class="color-sw" style="background:#B8D0D8" onclick="setWall('#B8D0D8',this)" title="Morning Sky"></div>
+            <div class="color-sw" style="background:#90B8C8" onclick="setWall('#90B8C8',this)" title="Coastal Blue"></div>
+            <div class="color-sw" style="background:#6898B8" onclick="setWall('#6898B8',this)" title="Denim"></div>
+            <div class="color-sw" style="background:#487898" onclick="setWall('#487898',this)" title="Aegean"></div>
+          </div>
+          <div class="p3-sub-label" style="margin-top:.6rem">Bold &amp; Dramatic</div>
+          <div class="p3-color-grid">
+            <div class="color-sw" style="background:#2D4A3E" onclick="setWall('#2D4A3E',this)" title="Forest Night"></div>
+            <div class="color-sw" style="background:#1E3A4A" onclick="setWall('#1E3A4A',this)" title="Midnight Blue"></div>
+            <div class="color-sw" style="background:#3A2A4A" onclick="setWall('#3A2A4A',this)" title="Aubergine"></div>
+            <div class="color-sw" style="background:#2D2820" onclick="setWall('#2D2820',this)" title="Charcoal"></div>
+            <div class="color-sw" style="background:#1A1A1A" onclick="setWall('#1A1A1A',this)" title="Jet Black"></div>
+            <div class="color-sw" style="background:#8B2020" onclick="setWall('#8B2020',this)" title="Crimson"></div>
+            <div class="color-sw" style="background:#7A5C38" onclick="setWall('#7A5C38',this)" title="Mocha"></div>
+            <div class="color-sw" style="background:#4A6058" onclick="setWall('#4A6058',this)" title="Dark Teal"></div>
+          </div>
+          <div class="p3-sub-label" style="margin-top:.75rem">Wall Finish / Texture</div>
+          <div class="p3-option-chips" id="wallFinish">
+            <button class="p3-chip active" onclick="setWallFinish('matte',this)">🪣 Matte</button>
+            <button class="p3-chip" onclick="setWallFinish('eggshell',this)">🥚 Eggshell</button>
+            <button class="p3-chip" onclick="setWallFinish('satin',this)">✨ Satin</button>
+            <button class="p3-chip" onclick="setWallFinish('texture',this)">🪨 Texture Paint</button>
+            <button class="p3-chip" onclick="setWallFinish('limewash',this)">🌿 Lime Wash</button>
+            <button class="p3-chip" onclick="setWallFinish('venetian',this)">🏛 Venetian Plaster</button>
+            <button class="p3-chip" onclick="setWallFinish('stucco',this)">🧱 Stucco</button>
+            <button class="p3-chip" onclick="setWallFinish('grasscloth',this)">🌾 Grasscloth Wallpaper</button>
+            <button class="p3-chip" onclick="setWallFinish('geometric',this)">◆ Geometric Wallpaper</button>
+            <button class="p3-chip" onclick="setWallFinish('brick',this)">🧱 Exposed Brick</button>
+            <button class="p3-chip" onclick="setWallFinish('wood-panel',this)">🪵 Wood Panelling</button>
+            <button class="p3-chip" onclick="setWallFinish('fluted',this)">〰 Fluted Panel</button>
+          </div>
+        </div>
+
+        <!-- FLOORING -->
+        <div class="p3-section">
+          <div class="p3-section-title">🪵 Flooring</div>
+          <div class="p3-sub-label">Natural Wood</div>
+          <div class="p3-option-chips">
+            <button class="p3-chip active" onclick="setFloor('teak-hardwood',this)">🪵 Teak Hardwood</button>
+            <button class="p3-chip" onclick="setFloor('oak-hardwood',this)">🌳 Oak Hardwood</button>
+            <button class="p3-chip" onclick="setFloor('walnut-hardwood',this)">🟫 Walnut Hardwood</button>
+            <button class="p3-chip" onclick="setFloor('bamboo',this)">🎋 Bamboo</button>
+            <button class="p3-chip" onclick="setFloor('reclaimed-wood',this)">♻ Reclaimed Wood</button>
+            <button class="p3-chip" onclick="setFloor('engineered-wood',this)">🔧 Engineered Wood</button>
+          </div>
+          <div class="p3-sub-label" style="margin-top:.6rem">Tiles &amp; Stone</div>
+          <div class="p3-option-chips">
+            <button class="p3-chip" onclick="setFloor('italian-marble',this)">⬜ Italian Marble</button>
+            <button class="p3-chip" onclick="setFloor('calacatta-marble',this)">🔲 Calacatta Marble</button>
+            <button class="p3-chip" onclick="setFloor('black-marble',this)">⬛ Black Marquina</button>
+            <button class="p3-chip" onclick="setFloor('vitrified-large',this)">▪ Vitrified 800×800</button>
+            <button class="p3-chip" onclick="setFloor('vitrified-wood',this)">🪵 Wood-look Vitrified</button>
+            <button class="p3-chip" onclick="setFloor('terracotta-tile',this)">🟥 Terracotta Tile</button>
+            <button class="p3-chip" onclick="setFloor('kota-stone',this)">🪨 Kota Stone</button>
+            <button class="p3-chip" onclick="setFloor('slate',this)">◼ Slate</button>
+            <button class="p3-chip" onclick="setFloor('cement-tile',this)">🔳 Cement Tile</button>
+          </div>
+          <div class="p3-sub-label" style="margin-top:.6rem">Soft &amp; Specialty</div>
+          <div class="p3-option-chips">
+            <button class="p3-chip" onclick="setFloor('carpet-wool',this)">🟫 Wool Carpet</button>
+            <button class="p3-chip" onclick="setFloor('carpet-sisal',this)">🌾 Sisal Carpet</button>
+            <button class="p3-chip" onclick="setFloor('polished-concrete',this)">🔲 Polished Concrete</button>
+            <button class="p3-chip" onclick="setFloor('laminate-12mm',this)">📋 Laminate 12mm</button>
+            <button class="p3-chip" onclick="setFloor('vinyl-plank',this)">📏 Vinyl Plank (LVP)</button>
+          </div>
+        </div>
+
+        <!-- SOFA -->
+        <div class="p3-section">
+          <div class="p3-section-title">🛋 Sofa</div>
+          <div class="p3-sub-label">Style</div>
+          <div class="p3-option-chips">
+            <button class="p3-chip active" onclick="setSofa('style','modular',this)">Modular</button>
+            <button class="p3-chip" onclick="setSofa('style','l-shape',this)">L-Shape Sectional</button>
+            <button class="p3-chip" onclick="setSofa('style','chesterfield',this)">Chesterfield</button>
+            <button class="p3-chip" onclick="setSofa('style','mid-century',this)">Mid-Century Modern</button>
+            <button class="p3-chip" onclick="setSofa('style','scandi',this)">Scandinavian</button>
+            <button class="p3-chip" onclick="setSofa('style','curved',this)">Curved / Bouclé</button>
+            <button class="p3-chip" onclick="setSofa('style','daybed',this)">Daybed</button>
+            <button class="p3-chip" onclick="setSofa('style','loveseat',this)">Loveseat</button>
+          </div>
+          <div class="p3-sub-label" style="margin-top:.6rem">Material</div>
+          <div class="p3-option-chips">
+            <button class="p3-chip active" onclick="setSofa('material','fabric',this)">🧵 Fabric</button>
+            <button class="p3-chip" onclick="setSofa('material','velvet',this)">✨ Velvet</button>
+            <button class="p3-chip" onclick="setSofa('material','leather',this)">🐄 Full-Grain Leather</button>
+            <button class="p3-chip" onclick="setSofa('material','leatherette',this)">🛋 Leatherette</button>
+            <button class="p3-chip" onclick="setSofa('material','linen',this)">🌿 Linen</button>
+            <button class="p3-chip" onclick="setSofa('material','boucle',this)">🔘 Bouclé</button>
+            <button class="p3-chip" onclick="setSofa('material','cotton',this)">☁ Cotton</button>
+            <button class="p3-chip" onclick="setSofa('material','microfiber',this)">🔬 Microfiber</button>
+          </div>
+          <div class="p3-sub-label" style="margin-top:.6rem">Colour</div>
+          <div class="p3-color-grid">
+            <div class="color-sw" style="background:#F5F0E8" onclick="setSofa('color','#F5F0E8',this)" title="Off White"></div>
+            <div class="color-sw" style="background:#E0D8C8" onclick="setSofa('color','#E0D8C8',this)" title="Cream"></div>
+            <div class="color-sw" style="background:#C8C0B0" onclick="setSofa('color','#C8C0B0',this)" title="Beige"></div>
+            <div class="color-sw" style="background:#A09888" onclick="setSofa('color','#A09888',this)" title="Greige"></div>
+            <div class="color-sw" style="background:#808888" onclick="setSofa('color','#808888',this)" title="Grey"></div>
+            <div class="color-sw" style="background:#505058" onclick="setSofa('color','#505058',this)" title="Charcoal"></div>
+            <div class="color-sw" style="background:#1A1A1A" onclick="setSofa('color','#1A1A1A',this)" title="Black"></div>
+            <div class="color-sw" style="background:#8B4513" onclick="setSofa('color','#8B4513',this)" title="Tan Leather"></div>
+            <div class="color-sw" style="background:#C87060" onclick="setSofa('color','#C87060',this)" title="Terracotta"></div>
+            <div class="color-sw" style="background:#3A5F4A" onclick="setSofa('color','#3A5F4A',this)" title="Forest Green"></div>
+            <div class="color-sw" style="background:#2A4A6A" onclick="setSofa('color','#2A4A6A',this)" title="Navy Blue"></div>
+            <div class="color-sw" style="background:#8B5A8B" onclick="setSofa('color','#8B5A8B',this)" title="Mauve"></div>
+            <div class="color-sw" style="background:#C8A020" onclick="setSofa('color','#C8A020',this)" title="Mustard"></div>
+            <div class="color-sw" style="background:#D4C0A0" onclick="setSofa('color','#D4C0A0',this)" title="Sand"></div>
+            <div class="color-sw" style="background:#8B3030" onclick="setSofa('color','#8B3030',this)" title="Burgundy"></div>
+            <div class="color-sw" style="background:#E8D0A0" onclick="setSofa('color','#E8D0A0',this)" title="Champagne"></div>
+          </div>
+          <div class="p3-sub-label" style="margin-top:.6rem">Size</div>
+          <div class="p3-option-chips">
+            <button class="p3-chip" onclick="setSofa('size','2-seater',this)">2-Seater</button>
+            <button class="p3-chip active" onclick="setSofa('size','3-seater',this)">3-Seater</button>
+            <button class="p3-chip" onclick="setSofa('size','4-seater',this)">4-Seater</button>
+            <button class="p3-chip" onclick="setSofa('size','6-seater-l',this)">6-Seater L</button>
+            <button class="p3-chip" onclick="setSofa('size','sectional-large',this)">Large Sectional</button>
+          </div>
+        </div>
+
+        <!-- LIGHTING -->
+        <div class="p3-section">
+          <div class="p3-section-title">💡 Lighting</div>
+          <div class="p3-sub-label">Ceiling / Primary</div>
+          <div class="p3-option-chips">
+            <button class="p3-chip active" onclick="setLightingType('recessed',this)">💡 Recessed Spotlights</button>
+            <button class="p3-chip" onclick="setLightingType('chandelier-crystal',this)">💎 Crystal Chandelier</button>
+            <button class="p3-chip" onclick="setLightingType('chandelier-modern',this)">⭕ Modern Chandelier</button>
+            <button class="p3-chip" onclick="setLightingType('pendant-single',this)">🔵 Single Pendant</button>
+            <button class="p3-chip" onclick="setLightingType('pendant-cluster',this)">✦ Cluster Pendant</button>
+            <button class="p3-chip" onclick="setLightingType('pendant-rattan',this)">🪢 Rattan Pendant</button>
+            <button class="p3-chip" onclick="setLightingType('track',this)">📍 Track Lighting</button>
+            <button class="p3-chip" onclick="setLightingType('cove',this)">〰 Cove / Indirect LED</button>
+            <button class="p3-chip" onclick="setLightingType('false-ceiling',this)">⬜ False Ceiling + Downlights</button>
+          </div>
+          <div class="p3-sub-label" style="margin-top:.6rem">Ambient Mood</div>
+          <div class="p3-option-chips" id="lightingMood">
+            <button class="p3-chip active" onclick="setLighting('warm',this)">☀ Warm White (3000K)</button>
+            <button class="p3-chip" onclick="setLighting('neutral',this)">⚪ Neutral (4000K)</button>
+            <button class="p3-chip" onclick="setLighting('cool',this)">❄ Cool White (6500K)</button>
+            <button class="p3-chip" onclick="setLighting('dramatic',this)">🌙 Dramatic / Accent</button>
+            <button class="p3-chip" onclick="setLighting('rgb',this)">🌈 RGB Colour Changing</button>
+          </div>
+          <div class="p3-sub-label" style="margin-top:.6rem">Accent Lighting</div>
+          <div class="p3-option-chips">
+            <button class="p3-chip" onclick="toggleDecor('floor-lamp',true)">🔦 Floor Lamp</button>
+            <button class="p3-chip" onclick="toggleDecor('table-lamp',true)">🕯 Table Lamp</button>
+            <button class="p3-chip" onclick="toggleDecor('wall-sconce',true)">🔆 Wall Sconces</button>
+            <button class="p3-chip" onclick="toggleDecor('led-strip',true)">〰 LED Strip</button>
+            <button class="p3-chip" onclick="toggleDecor('picture-light',true)">🖼 Picture Light</button>
+          </div>
+        </div>
+
+        <!-- CURTAINS & BLINDS -->
+        <div class="p3-section">
+          <div class="p3-section-title">🪟 Curtains &amp; Window Treatments</div>
+          <div class="p3-option-chips">
+            <button class="p3-chip" onclick="setCurtain('style','sheer-linen',this)">🌿 Sheer Linen</button>
+            <button class="p3-chip" onclick="setCurtain('style','sheer-voile',this)">☁ Sheer Voile</button>
+            <button class="p3-chip" onclick="setCurtain('style','blackout',this)">⬛ Blackout</button>
+            <button class="p3-chip" onclick="setCurtain('style','velvet',this)">✨ Velvet Drapes</button>
+            <button class="p3-chip" onclick="setCurtain('style','cotton-printed',this)">🌸 Cotton Printed</button>
+            <button class="p3-chip" onclick="setCurtain('style','block-print',this)">🖨 Block Print</button>
+            <button class="p3-chip" onclick="setCurtain('style','roman-blind',this)">🪟 Roman Blind</button>
+            <button class="p3-chip" onclick="setCurtain('style','roller-blind',this)">📜 Roller Blind</button>
+            <button class="p3-chip" onclick="setCurtain('style','wooden-blind',this)">🪵 Wooden Blind</button>
+            <button class="p3-chip" onclick="setCurtain('style','bamboo-blind',this)">🎋 Bamboo Blind</button>
+            <button class="p3-chip" onclick="setCurtain('style','no-curtain',this)">❌ No Curtains</button>
+          </div>
+          <div class="p3-sub-label" style="margin-top:.6rem">Colour</div>
+          <div class="p3-color-grid">
+            <div class="color-sw" style="background:#FFFFFF" onclick="setCurtain('color','#FFFFFF',this)" title="White"></div>
+            <div class="color-sw" style="background:#F5F0E8" onclick="setCurtain('color','#F5F0E8',this)" title="Ivory"></div>
+            <div class="color-sw" style="background:#E8E0D0" onclick="setCurtain('color','#E8E0D0',this)" title="Linen"></div>
+            <div class="color-sw" style="background:#C8C0B0" onclick="setCurtain('color','#C8C0B0',this)" title="Greige"></div>
+            <div class="color-sw" style="background:#A0A8A0" onclick="setCurtain('color','#A0A8A0',this)" title="Sage"></div>
+            <div class="color-sw" style="background:#6898B8" onclick="setCurtain('color','#6898B8',this)" title="Blue"></div>
+            <div class="color-sw" style="background:#2D4A3E" onclick="setCurtain('color','#2D4A3E',this)" title="Dark Green"></div>
+            <div class="color-sw" style="background:#1A1A1A" onclick="setCurtain('color','#1A1A1A',this)" title="Black"></div>
+            <div class="color-sw" style="background:#C87060" onclick="setCurtain('color','#C87060',this)" title="Terracotta"></div>
+            <div class="color-sw" style="background:#8B3030" onclick="setCurtain('color','#8B3030',this)" title="Burgundy"></div>
+            <div class="color-sw" style="background:#C8A020" onclick="setCurtain('color','#C8A020',this)" title="Mustard"></div>
+            <div class="color-sw" style="background:#3A2A4A" onclick="setCurtain('color','#3A2A4A',this)" title="Purple"></div>
+          </div>
+        </div>
+
+        <!-- AREA RUG -->
+        <div class="p3-section">
+          <div class="p3-section-title">🧶 Area Rug</div>
+          <div class="p3-option-chips">
+            <button class="p3-chip" onclick="toggleDecor('rug',true)">✅ Add a Rug</button>
+            <button class="p3-chip" onclick="toggleDecor('no-rug',true)">❌ No Rug</button>
+          </div>
+          <div class="p3-sub-label" style="margin-top:.6rem">Style</div>
+          <div class="p3-option-chips">
+            <button class="p3-chip" onclick="setRug('style','persian',this)">🏺 Persian / Oriental</button>
+            <button class="p3-chip active" onclick="setRug('style','geometric',this)">◆ Geometric</button>
+            <button class="p3-chip" onclick="setRug('style','solid',this)">⬜ Solid Colour</button>
+            <button class="p3-chip" onclick="setRug('style','moroccan',this)">✦ Moroccan</button>
+            <button class="p3-chip" onclick="setRug('style','dhurrie',this)">🧵 Dhurrie / Flatweave</button>
+            <button class="p3-chip" onclick="setRug('style','shag',this)">🌿 Shag / High Pile</button>
+            <button class="p3-chip" onclick="setRug('style','abstract',this)">🎨 Abstract</button>
+            <button class="p3-chip" onclick="setRug('style','jute',this)">🌾 Jute / Natural</button>
+          </div>
+          <div class="p3-sub-label" style="margin-top:.6rem">Material</div>
+          <div class="p3-option-chips">
+            <button class="p3-chip" onclick="setRug('material','wool',this)">🐑 Wool</button>
+            <button class="p3-chip active" onclick="setRug('material','cotton',this)">☁ Cotton</button>
+            <button class="p3-chip" onclick="setRug('material','silk',this)">✨ Silk Blend</button>
+            <button class="p3-chip" onclick="setRug('material','jute',this)">🌾 Jute</button>
+            <button class="p3-chip" onclick="setRug('material','synthetic',this)">🔬 Synthetic (Easy Clean)</button>
+            <button class="p3-chip" onclick="setRug('material','bamboo-silk',this)">🎋 Bamboo Silk</button>
+          </div>
+        </div>
+
+        <!-- CEILING -->
+        <div class="p3-section">
+          <div class="p3-section-title">🏠 Ceiling Treatment</div>
+          <div class="p3-option-chips">
+            <button class="p3-chip active" onclick="setCeiling('plain',this)">⬜ Plain / Painted</button>
+            <button class="p3-chip" onclick="setCeiling('false-pop',this)">⭕ POP False Ceiling</button>
+            <button class="p3-chip" onclick="setCeiling('false-gypsum',this)">🔳 Gypsum False Ceiling</button>
+            <button class="p3-chip" onclick="setCeiling('cove',this)">〰 Cove Ceiling with LED</button>
+            <button class="p3-chip" onclick="setCeiling('wood-beam',this)">🪵 Exposed Wood Beams</button>
+            <button class="p3-chip" onclick="setCeiling('wood-panel',this)">📋 Wood Panel Ceiling</button>
+            <button class="p3-chip" onclick="setCeiling('coffered',this)">🔲 Coffered Ceiling</button>
+            <button class="p3-chip" onclick="setCeiling('tray',this)">⬡ Tray Ceiling</button>
+            <button class="p3-chip" onclick="setCeiling('exposed-concrete',this)">🔲 Exposed Concrete</button>
+            <button class="p3-chip" onclick="setCeiling('glass',this)">🔵 Skylight / Glass Panel</button>
+          </div>
+        </div>
+
+        <!-- DECOR -->
+        <div class="p3-section">
+          <div class="p3-section-title">🌿 Decor &amp; Accessories</div>
+          <div class="p3-option-chips">
+            <button class="p3-chip active" onclick="toggleDecor('plant',true)">🪴 Indoor Plants</button>
+            <button class="p3-chip active" onclick="toggleDecor('art',true)">🖼 Wall Art</button>
+            <button class="p3-chip" onclick="toggleDecor('mirror',true)">🪞 Statement Mirror</button>
+            <button class="p3-chip" onclick="toggleDecor('bookshelf-decor',true)">📚 Bookshelf Styling</button>
+            <button class="p3-chip" onclick="toggleDecor('vase',true)">🏺 Vases &amp; Ceramics</button>
+            <button class="p3-chip" onclick="toggleDecor('cushions',true)">🛋 Scatter Cushions</button>
+            <button class="p3-chip" onclick="toggleDecor('throw',true)">🧶 Throw Blanket</button>
+            <button class="p3-chip" onclick="toggleDecor('candles',true)">🕯 Candles / Diyas</button>
+            <button class="p3-chip" onclick="toggleDecor('artwork-gallery',true)">🖼 Gallery Wall</button>
+            <button class="p3-chip" onclick="toggleDecor('bar-cart',true)">🥃 Bar Cart</button>
+          </div>
+        </div>
+
+      </div><!-- /p3-config-col -->
+    </div><!-- /p3-body -->
   </div>
 
   <!-- ──────────────────────────────────────────────────────────
