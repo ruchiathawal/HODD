@@ -2549,9 +2549,16 @@ function loadFromStorage() {
       selectedDesign: saved.selectedDesign ?? state.selectedDesign,
       favDesigns: new Set(saved.favDesigns ?? []),
       wallColor: saved.wallColor ?? state.wallColor,
-      sofa: saved.sofa ?? state.sofa,
-      floor: saved.floor ?? state.floor,
+      // Validate sofa — old format was a string, new is object
+      sofa: (saved.sofa && typeof saved.sofa === 'object') ? saved.sofa : state.sofa,
+      // Validate floor — old values like 'wood' map to new chip labels
+      floor: (saved.floor && saved.floor.includes('-')) ? saved.floor : state.floor,
       lighting: saved.lighting ?? state.lighting,
+      wallFinish: saved.wallFinish ?? state.wallFinish,
+      lightingType: saved.lightingType ?? state.lightingType,
+      ceiling: saved.ceiling ?? state.ceiling,
+      curtain: saved.curtain ?? state.curtain,
+      rug: saved.rug ?? state.rug,
       decor: saved.decor ?? state.decor,
       cart: saved.cart ?? state.cart,
     });
