@@ -207,7 +207,7 @@
         <div class="input-section">
           <div class="input-label">💰 Budget Range</div>
           <div class="budget-slider-wrap">
-            <input type="range" min="0" max="17" value="6" class="budget-slider" id="budgetSlider" oninput="updateBudget(this.value)" />
+            <input type="range" min="50000" max="1500000" step="5000" value="200000" class="budget-slider" id="budgetSlider" oninput="updateBudget(this.value)" />
             <div class="budget-labels">
               <span>₹50K</span><span>₹1L</span><span>₹2L</span><span>₹5L</span><span>₹8L</span><span>₹15L+</span>
             </div>
@@ -242,16 +242,27 @@
             <button class="furn-chip" data-furn="center-table" onclick="toggleFurniture('existing','center-table',this)">☕ Center Table</button>
           </div>
 
-          <div class="furniture-question" style="margin-top:.9rem">What new furniture do you want?</div>
+          <div class="furniture-question" style="margin-top:.9rem">What new furniture do you want? <span class="optional-tag">items you already have are auto-hidden</span></div>
           <div class="furniture-chips" id="wantedFurnitureChips">
             <button class="furn-chip" data-furn="sofa" onclick="toggleFurniture('wanted','sofa',this)">🛋 Sofa</button>
-            <button class="furn-chip" data-furn="accent-chair" onclick="toggleFurniture('wanted','accent-chair',this)">🪑 Accent Chair</button>
             <button class="furn-chip" data-furn="bed" onclick="toggleFurniture('wanted','bed',this)">🛏 Bed</button>
-            <button class="furn-chip" data-furn="storage" onclick="toggleFurniture('wanted','storage',this)">📦 Storage Unit</button>
+            <button class="furn-chip" data-furn="dining-table" onclick="toggleFurniture('wanted','dining-table',this)">🍽 Dining Table</button>
+            <button class="furn-chip" data-furn="wardrobe" onclick="toggleFurniture('wanted','wardrobe',this)">🚪 Wardrobe</button>
+            <button class="furn-chip" data-furn="tv-unit" onclick="toggleFurniture('wanted','tv-unit',this)">📺 TV Unit</button>
+            <button class="furn-chip" data-furn="desk" onclick="toggleFurniture('wanted','desk',this)">🖥 Desk</button>
+            <button class="furn-chip" data-furn="bookshelf" onclick="toggleFurniture('wanted','bookshelf',this)">📚 Bookshelf</button>
+            <button class="furn-chip" data-furn="center-table" onclick="toggleFurniture('wanted','center-table',this)">☕ Center Table</button>
+            <button class="furn-chip" data-furn="accent-chair" onclick="toggleFurniture('wanted','accent-chair',this)">🪑 Accent Chair</button>
+            <button class="furn-chip" data-furn="lounge-chair" onclick="toggleFurniture('wanted','lounge-chair',this)">🛋 Lounge Chair</button>
             <button class="furn-chip" data-furn="side-table" onclick="toggleFurniture('wanted','side-table',this)">🪴 Side Table</button>
+            <button class="furn-chip" data-furn="storage" onclick="toggleFurniture('wanted','storage',this)">📦 Storage Unit</button>
             <button class="furn-chip" data-furn="shoe-rack" onclick="toggleFurniture('wanted','shoe-rack',this)">👟 Shoe Rack</button>
             <button class="furn-chip" data-furn="display-cabinet" onclick="toggleFurniture('wanted','display-cabinet',this)">🏺 Display Cabinet</button>
-            <button class="furn-chip" data-furn="lounge-chair" onclick="toggleFurniture('wanted','lounge-chair',this)">🪑 Lounge Chair</button>
+            <button class="furn-chip" data-furn="dresser" onclick="toggleFurniture('wanted','dresser',this)">🪞 Dresser</button>
+            <button class="furn-chip" data-furn="bar-cabinet" onclick="toggleFurniture('wanted','bar-cabinet',this)">🥃 Bar Cabinet</button>
+            <button class="furn-chip" data-furn="bean-bag" onclick="toggleFurniture('wanted','bean-bag',this)">🫘 Bean Bag</button>
+            <button class="furn-chip" data-furn="chest-of-drawers" onclick="toggleFurniture('wanted','chest-of-drawers',this)">🗄 Chest of Drawers</button>
+            <button class="furn-chip" data-furn="pooja-unit" onclick="toggleFurniture('wanted','pooja-unit',this)">🪔 Pooja Unit</button>
           </div>
 
           <label class="constraint-item" style="margin-top:.9rem;display:flex;align-items:center;gap:.5rem">
@@ -977,6 +988,6 @@
 </section>
 
 <script src="firebase.js"></script>
-<script src="app.js?v=20"></script>
+<script src="app.js?v=21"></script>
 </body>
 </html>

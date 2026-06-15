@@ -2,7 +2,7 @@
    STATE
 ═══════════════════════════════════════════════════════════════ */
 const state = {
-  room: null, style: [], city: '', budget: { label: 'Mid-Range', value: '₹2,00,000', tier: 2 },
+  room: null, style: [], city: '', budget: { label: 'Mid-Range', value: '₹2,00,000', tier: 1, numValue: 200000 },
   constraints: new Set(), notes: '',
   uploadedFiles: [], referencePhoto: null,
   dims: { length: 18, breadth: 14, height: 10 },
@@ -509,13 +509,36 @@ function toggleFurniture(type, key, btn) {
 }
 
 function updateBudget(val) {
-  const d = BUDGET_DATA[val];
-  state.budget = d;
-  document.getElementById('budgetDisplay').textContent = d.value;
-  document.getElementById('budgetTier').textContent = d.label;
+  const num = parseInt(val, 10);
+
+  // Derive tier from rupee value
+  let label, tier;
+  if (num < 125000)       { label = 'Budget-Friendly'; tier = 0; }
+  else if (num < 500000)  { label = 'Mid-Range';       tier = 1; }
+  else if (num < 1000000) { label = 'Premium';         tier = 2; }
+  else                    { label = 'Luxury';          tier = 3; }
+
+  // Format as Indian notation  ₹X,XX,XXX
+  const formatted = formatINR(num);
+
+  state.budget = { label, value: formatted, tier, numValue: num };
+  document.getElementById('budgetDisplay').textContent = formatted;
+  document.getElementById('budgetTier').textContent = label;
   document.getElementById('budgetTier').style.background =
-    d.label === 'Luxury' ? 'rgba(251,191,36,.2)' : d.label === 'Premium' ? 'rgba(52,211,153,.15)' : 'rgba(139,92,246,.15)';
+    tier === 3 ? 'rgba(251,191,36,.2)' :
+    tier === 2 ? 'rgba(52,211,153,.15)' : 'rgba(139,92,246,.15)';
   autosave();
+}
+
+function formatINR(num) {
+  if (num >= 1500000) return '₹15,00,000+';
+  // Indian numbering: last 3 digits, then groups of 2
+  const s = num.toString();
+  if (s.length <= 3) return '₹' + s;
+  const last3 = s.slice(-3);
+  const rest  = s.slice(0, -3);
+  const grouped = rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',');
+  return '₹' + grouped + ',' + last3;
 }
 
 /* real file upload ─────────────────────────────────────────── */
@@ -1307,10 +1330,8 @@ function buildAIBanner() {
 function goPhase2() {
   showPhase(2);
   renderDesignCards();
-  // If user has uploaded a photo, kick off AI renders in background
-  if (state.referencePhoto) {
-    startAIRenders();
-  }
+  // Always kick off AI renders — uses uploaded photo if available, else style reference image
+  startAIRenders();
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1334,11 +1355,11 @@ function resizeImageForAI(dataUrl, maxSize = 768) {
   });
 }
 
-async function startPrediction(imageBase64, styleKey, roomType, variationIndex) {
+async function startPrediction(imageBase64, styleKey, roomType, variationIndex, customPrompt) {
   const res = await fetch('/.netlify/functions/render-start', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ imageBase64, styleKey, roomType, variationIndex }),
+    body: JSON.stringify({ imageBase64, styleKey, roomType, variationIndex, customPrompt }),
   });
   if (!res.ok) throw new Error(`render-start failed: ${res.status}`);
   return res.json(); // { id, status }
@@ -1362,8 +1383,29 @@ const aiRenders = {}; // { designId: { status, url } }
 
 async function startAIRenders() {
   const rankedDesigns = getAIRecommendedDesigns();
-  const resizedImage = await resizeImageForAI(state.referencePhoto);
   const roomType = state.room || 'living';
+
+  // Use uploaded photo if available; otherwise fetch the style-matched room image from Unsplash
+  let baseImageDataUrl = state.referencePhoto;
+  if (!baseImageDataUrl) {
+    try {
+      // Pick the top design's room image as the AI base
+      const topTheme = STYLE_THEMES[rankedDesigns[0]?.styleKey] || STYLE_THEMES['japandi'];
+      const fallbackUrl = topTheme.roomImages?.[roomType] || topTheme.img ||
+        'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=768&q=80';
+      const resp = await fetch(fallbackUrl);
+      const blob = await resp.blob();
+      baseImageDataUrl = await new Promise(res => {
+        const r = new FileReader(); r.onload = e => res(e.target.result); r.readAsDataURL(blob);
+      });
+    } catch (e) {
+      console.warn('Could not fetch fallback base image:', e.message);
+      return; // Can't render without a base image
+    }
+  }
+
+  const resizedImage = await resizeImageForAI(baseImageDataUrl);
+  if (!resizedImage) return;
 
   // Show loading state on all cards
   rankedDesigns.forEach(d => {
@@ -2540,7 +2582,8 @@ function loadFromStorage() {
       room: saved.room ?? state.room,
       style: saved.style ?? state.style,
       city: saved.city ?? state.city,
-      budget: saved.budget ?? state.budget,
+      // Migrate old budget format (had no numValue) — default to ₹2L if stale
+      budget: (saved.budget?.numValue) ? saved.budget : state.budget,
       constraints: new Set(saved.constraints ?? []),
       notes: saved.notes ?? state.notes,
       dims: saved.dims ?? state.dims,

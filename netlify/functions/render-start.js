@@ -1,49 +1,65 @@
 /* ─────────────────────────────────────────────────────────────────
    HODD · Render Start
    POST /.netlify/functions/render-start
-   Body: { imageBase64, styleKey, roomType }
+   Body: { imageBase64, styleKey, roomType, variationIndex?, customPrompt? }
    Returns: { id }   (Replicate prediction ID to poll)
 ───────────────────────────────────────────────────────────────── */
 
+// Room-type specific prefixes for more accurate renders
+const ROOM_PREFIXES = {
+  living:     'photorealistic living room interior,',
+  bedroom:    'photorealistic bedroom interior,',
+  kitchen:    'photorealistic kitchen interior,',
+  dining:     'photorealistic dining room interior,',
+  bathroom:   'photorealistic bathroom interior,',
+  office:     'photorealistic home office interior,',
+  workoffice: 'photorealistic modern office workspace interior,',
+  kids:       'photorealistic kids bedroom interior,',
+  studio:     'photorealistic studio apartment interior,',
+};
+
 const THEME_PROMPTS = {
   'japandi': [
-    'japandi interior design style, wabi-sabi aesthetic, minimalist, warm neutral tones, natural bamboo furniture, linen textiles, muted earth palette, soft ambient lighting, serene and calm atmosphere, professional interior photography, 8k, photorealistic',
-    'japandi style living room, low platform sofa in cream linen, bamboo shelving, stone coffee table, indoor plant, diffused natural light through shoji screens, ultra realistic, architectural digest style photography',
-    'japandi bedroom interior, platform bed in natural oak, textured linen bedding in oat and sand tones, bamboo pendant light, minimalist bedside tables, tatami-inspired flooring, professional photography 4k',
-    'japandi dining room, solid wood dining table, wishbone chairs in natural oak, wabi-sabi ceramic tableware, pendant rattan light, neutral walls with subtle texture, high-end interior photography',
-    'japandi home office, natural wood desk, ergonomic chair in cream boucle, bamboo shelves with curated objects, large window with diffused light, monochrome art print, professional interior photo',
+    'japandi interior style, wabi-sabi, minimalist, warm neutral tones, natural wood furniture, linen textiles, muted earth palette, soft diffused lighting, serene atmosphere, photorealistic architectural photography, shot on Phase One, 8k',
+    'japandi style, low platform furniture in natural oak, bamboo shelving, stone surfaces, indoor fiddle leaf plant, natural light through shoji-inspired windows, photorealistic, architectural digest quality',
+    'japandi interior, warm oatmeal and sand tones, tactile linen upholstery, rattan pendant lamp, exposed concrete wall texture, hand-thrown ceramic objects, professional architectural photography 4k',
+    'japandi aesthetic, neutral palette with warm wood grain, minimal decor, single statement artwork, bamboo blinds, muted sage plant, photorealistic interior design photograph',
+    'japandi home interior, organic shapes, warm whites and soft browns, textured walls, curated minimal objects, ambient floor lamp, dusk natural light, ultra high quality photo',
   ],
   'indian-modern': [
-    'modern indian interior design, contemporary meets heritage, solid sheesham teak furniture, handbeaten brass accents, hand-blocked cotton textiles, warm terracotta and saffron palette, professional interior photography 8k',
-    'modern indian living room, low teak wood sofa with bright cushions, brass floor lamp, jali screen divider, handwoven dhurrie rug, terracotta pots with indoor plants, architectural digest style photo',
-    'modern indian bedroom, carved teak bed frame, brass hardware, block-print cotton duvet, woven jute rug, mud-plastered accent wall, warm pendant lighting, professional interior photography',
-    'modern indian dining room, solid wood dining table with turned legs, cane-backed chairs, brass chandelier, hand-painted ceramic dinnerware, lime-washed walls, photorealistic interior design photo',
-    'contemporary indian home office, rosewood desk with brass inlay, traditional patterns reinterpreted in modern form, vibrant silk cushion, hand-knotted rug, natural daylight, high quality interior photo',
+    'modern indian interior design, contemporary meets heritage, solid sheesham teak furniture, handbeaten brass accents, hand-blocked cotton textiles, warm terracotta and saffron palette, photorealistic architectural photography 8k',
+    'modern indian interior, low teak sofa with vibrant cushions, brass floor lamp, handwoven dhurrie rug, terracotta pots, warm amber lighting, photorealistic interior photo, architectural digest style',
+    'contemporary indian interior, carved wood furniture, brass hardware, block-print textiles, mud-plaster accent wall, warm pendant lighting, rich jewel tone accents, photorealistic 4k',
+    'modern indian style, rosewood and brass tones, hand-painted ceramic accents, lattice jali screen, lime-washed wall texture, curated craft objects, professional interior photography',
+    'contemporary indian home, warm terracotta floor, handloom textiles, natural teak furniture, brass chandelier, indoor plants, tropical natural light, ultra photorealistic interior photo',
   ],
   'contemporary': [
-    'coastal contemporary interior design, airy bright space, whitewash oak furniture, rattan accents, linen upholstery, sandy and ocean blue palette, abundant natural light, professional interior photography 8k',
-    'coastal contemporary living room, curved white sofa, rattan coffee table, sea glass ceramics, sheer linen curtains, bleached oak floors, indoor plants, architectural digest style photography',
-    'coastal contemporary bedroom, white platform bed, natural rattan headboard, linen duvet in sand and white, driftwood side tables, large window with ocean-inspired views, 4k interior photography',
-    'coastal contemporary dining room, whitewash oak dining table, rattan dining chairs, jute rug, white and blue ceramic vases, pendant woven light, bright airy space, professional photo',
-    'coastal contemporary home office, white desk with rattan chair, natural fiber rug, navy and white accents, large window, minimalist shelving with sea-inspired objects, photorealistic interior',
+    'contemporary interior design, clean lines, high ceilings, large windows, neutral palette with bold accent, mixed materials wood and metal, photorealistic architectural photography 8k',
+    'contemporary living space, architectural design, floating shelves, statement artwork, curved sofa, polished concrete floor, floor-to-ceiling glass, professional interior photography',
+    'contemporary interior, warm whites and mid-century modern shapes, open plan, dramatic pendant lighting, textured rug, curated gallery wall, photorealistic interior design photo',
+    'contemporary style interior, sleek cabinetry, integrated lighting, natural stone surfaces, minimal clutter, indoor plants, bright airy atmosphere, architectural photography',
+    'contemporary modern home, streamlined furniture, contrasting textures, warm neutral palette, designer lighting, large art piece, photorealistic high quality interior photo',
   ],
   'luxury-modern': [
-    'luxury modern interior design, high contrast drama, calacatta marble surfaces, brushed gold fixtures, deep velvet upholstery in emerald and navy, smoked glass accents, cinematic interior photography 8k',
-    'luxury modern living room, sculptural curved sofa in dark velvet, marble coffee table with brass legs, statement art piece, gold pendant light, rich jewel tones, architectural digest style photo',
-    'luxury modern master bedroom, upholstered bed in midnight blue velvet, marble side tables, brushed gold fixtures, floor to ceiling curtains, dramatic mood lighting, ultra premium interior photography',
-    'luxury modern dining room, marble dining table, upholstered chairs in velvet, gold chandelier, dark fluted paneling, curated bar cart, dramatic ambient lighting, high-end interior photography',
-    'luxury modern home office, dark walnut executive desk, leather chair, marble desktop accessories, floor to ceiling bookshelf, city view, moody dramatic lighting, professional interior photo',
+    'luxury modern interior design, high contrast drama, calacatta marble surfaces, brushed gold fixtures, deep velvet upholstery, smoked glass accents, cinematic professional photography 8k',
+    'luxury interior, sculptural sofa in dark velvet, marble surfaces with gold veining, statement chandelier, rich jewel tones, ambient mood lighting, architectural digest premium photo',
+    'high-end luxury interior, upholstered walls, floor-to-ceiling velvet curtains, marble coffee table, brushed brass accents, dramatic directional lighting, ultra premium photography 4k',
+    'luxury modern home, dark fluted wood paneling, brushed gold hardware, marble and onyx surfaces, bespoke furniture, cinematic interior architectural photography',
+    'opulent interior design, silk upholstery, crystal chandelier, book-matched marble walls, deep emerald and navy palette, luxury residential photography, architectural digest',
   ],
   'earthy-organic': [
-    'earthy organic interior design, natural and sustainable materials, terracotta, rattan, moss green linen, raw mango wood, clay textures, tactile surfaces, warm sunlit atmosphere, professional interior photography 8k',
-    'earthy organic living room, mango wood sofa with moss green cushions, terracotta floor tiles, rattan pendant light, hand-thrown ceramic pots, cactus and ficus plants, cozy natural atmosphere, 4k photo',
-    'earthy organic bedroom, raw wood bed frame, organic cotton duvet in earthy tones, woven rattan headboard, terracotta lamp, dried pampas grass, natural linen curtains, professional photography',
-    'earthy organic dining room, live-edge mango wood dining table, rattan dining chairs, clay bowls, hanging terracotta pots with plants, jute rug, warm natural sunlight, interior photography',
-    'earthy organic home office, reclaimed wood desk, natural fiber chair, living wall of plants, clay desk accessories, warm indirect lighting, sustainable materials, photorealistic interior photo',
+    'earthy organic interior design, natural sustainable materials, terracotta, rattan, moss green, raw mango wood, clay textures, warm sunlit atmosphere, photorealistic interior photography 8k',
+    'biophilic interior design, living wall of plants, terracotta floor tiles, rattan furniture, hand-thrown ceramic pots, warm natural sunlight, photorealistic 4k interior photo',
+    'earthy organic interior, raw wood and linen, organic cotton textiles, woven rattan pendant, dried pampas grass, warm indirect amber light, cozy natural atmosphere, professional photography',
+    'nature-inspired interior, mango wood furniture, tactile clay wall plaster, jute rug, indoor tropical plants, terracotta accents, golden hour natural lighting, architectural photography',
+    'organic modern interior, live-edge wood, moss green and terracotta palette, hand-crafted ceramics, macramé wall art, abundant plants, warm natural light, photorealistic interior',
   ],
 };
 
-const NEGATIVE_PROMPT = 'ugly, blurry, low quality, distorted, oversaturated, cartoon, illustration, drawing, painting, render, 3d, anime, watermark, text, logo, cropped, cut off, missing features, duplicate, deformed';
+// Suffix added to ALL prompts for maximum photorealism
+const REALISM_SUFFIX = 'ultra photorealistic, professional interior design photography, Canon EOS R5, 35mm lens, natural lighting, f/2.8, architectural digest, no people, high resolution 8k';
+
+const NEGATIVE_PROMPT = 'ugly, blurry, low quality, distorted, oversaturated, cartoon, illustration, painting, render, 3d, anime, watermark, text, logo, cropped, missing features, duplicate, deformed, unnatural colors, unrealistic, sketch, drawing';
 
 exports.handler = async (event) => {
   const headers = {
@@ -64,11 +80,18 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { imageBase64, styleKey, roomType, variationIndex = 0 } = JSON.parse(event.body);
+    const { imageBase64, styleKey, roomType, variationIndex = 0, customPrompt } = JSON.parse(event.body);
 
-    const prompts = THEME_PROMPTS[styleKey] || THEME_PROMPTS['japandi'];
-    const basePrompt = prompts[variationIndex % prompts.length];
-    const fullPrompt = roomType ? `${roomType} room, ${basePrompt}` : basePrompt;
+    let fullPrompt;
+    if (customPrompt) {
+      // Custom prompt from Phase 3 re-render (includes user's specific selections)
+      fullPrompt = `${customPrompt}, ${REALISM_SUFFIX}`;
+    } else {
+      const prompts = THEME_PROMPTS[styleKey] || THEME_PROMPTS['japandi'];
+      const basePrompt = prompts[variationIndex % prompts.length];
+      const roomPrefix = ROOM_PREFIXES[roomType] || 'photorealistic interior,';
+      fullPrompt = `${roomPrefix} ${basePrompt}, ${REALISM_SUFFIX}`;
+    }
 
     // Use adirik/interior-design model (best for room-to-room style transfer)
     const response = await fetch(
@@ -81,12 +104,12 @@ exports.handler = async (event) => {
         },
         body: JSON.stringify({
           input: {
-            image: imageBase64,           // data URL or https:// URL
+            image: imageBase64,
             prompt: fullPrompt,
             negative_prompt: NEGATIVE_PROMPT,
             guidance_scale: 15,
-            num_inference_steps: 30,      // balance speed vs quality
-            strength: 0.8,
+            num_inference_steps: 50,   // higher = better quality
+            strength: 0.75,            // 0.75 preserves room layout while changing style
             scheduler: 'DPMSolverMultistep',
           },
         }),
