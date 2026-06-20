@@ -653,7 +653,11 @@ function showAnalysisBanner(status, data) {
     banner.style.background = 'rgba(58,138,80,.1)';
     banner.style.color = '#1a5c30';
     banner.innerHTML = `✦ Room analysed${dimStr ? ' · ' + dimStr : ''}${furStr ? ' · Found: ' + furStr : ''} · Form auto-filled below`;
+    const badge = document.getElementById('p1ImageBadge');
+    if (badge) badge.textContent = `✦ ${dimStr || 'Room'} analysed`;
   } else {
+    const badge = document.getElementById('p1ImageBadge');
+    if (badge) badge.textContent = '✦ Photo uploaded';
     banner.style.background = 'rgba(180,60,60,.08)';
     banner.style.color = '#8b2020';
     banner.innerHTML = '⚠ Could not analyse photo — please fill in details manually';

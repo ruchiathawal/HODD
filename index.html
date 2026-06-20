@@ -161,7 +161,7 @@
         <!-- Big image preview (visible after upload) -->
         <div class="p1-image-preview hidden" id="p1ImagePreview">
           <img id="p1PreviewImg" src="" alt="Your room" />
-          <div class="p1-image-badge">✦ Image received — no dimensions needed</div>
+          <div class="p1-image-badge" id="p1ImageBadge">✦ Analysing your room…</div>
           <button class="p1-change-btn" onclick="clearRoomImage()">✕ Change photo</button>
         </div>
         <!-- hidden thumb grid kept for JS compatibility -->
@@ -1002,6 +1002,6 @@
 </section>
 
 <script src="firebase.js"></script>
-<script src="app.js?v=28"></script>
+<script src="app.js?v=29"></script>
 </body>
 </html>
