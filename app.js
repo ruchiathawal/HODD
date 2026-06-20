@@ -55,7 +55,17 @@ function showPhase(n) {
   for (let i = 1; i <= 5; i++) document.getElementById(`phase${i}`).classList.toggle('hidden', i !== n);
   setProgress(n);
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (n === 1) syncBudgetSlider();
   autosave();
+}
+
+function syncBudgetSlider() {
+  const slider = document.getElementById('budgetSlider');
+  if (!slider) return;
+  const num = state.budget?.numValue || 200000;
+  slider.value = num;
+  document.getElementById('budgetDisplay').textContent = state.budget?.value || formatINR(num);
+  document.getElementById('budgetTier').textContent = state.budget?.label || 'Mid-Range';
 }
 
 function startFlow() { showScreen('wizard'); showPhase(1); warmReplicate(); }
@@ -1363,24 +1373,64 @@ function resizeImageForAI(dataUrl, maxSize = 512) {
   });
 }
 
+// ── Replicate / FLUX-schnell direct browser calls ───────────────
+let REPLICATE_TOKEN = null;
+async function getReplicateToken() {
+  if (REPLICATE_TOKEN) return REPLICATE_TOKEN;
+  const res = await fetch('/.netlify/functions/get-token');
+  const data = await res.json();
+  REPLICATE_TOKEN = data.token;
+  return REPLICATE_TOKEN;
+}
+
+const AI_ROOM_PREFIXES = {
+  living:'photorealistic living room interior,', bedroom:'photorealistic bedroom interior,',
+  kitchen:'photorealistic modern kitchen interior,', dining:'photorealistic dining room interior,',
+  bathroom:'photorealistic luxury bathroom interior,', office:'photorealistic home office interior,',
+  workoffice:'photorealistic modern office workspace interior,', kids:'photorealistic kids bedroom interior,',
+  studio:'photorealistic studio apartment interior,',
+};
+const AI_THEME_PROMPTS = {
+  'japandi':['japandi interior style, wabi-sabi minimalism, warm neutral tones, natural oak furniture, linen textiles, muted earth palette, soft diffused lighting, serene atmosphere, professional architectural photography','japandi style, low platform furniture in natural oak, bamboo shelving, stone surfaces, indoor plant, natural light, architectural digest quality','japandi interior, warm oatmeal tones, tactile linen upholstery, rattan pendant lamp, exposed concrete texture, ceramic objects','japandi aesthetic, neutral palette, warm wood grain, minimal decor, statement artwork, bamboo blinds','japandi home, organic shapes, warm whites and soft browns, textured walls, ambient floor lamp'],
+  'indian-modern':['modern indian interior design, contemporary meets heritage, sheesham teak furniture, brass accents, hand-blocked textiles, terracotta and saffron palette, architectural photography','modern indian interior, teak sofa with vibrant cushions, brass floor lamp, dhurrie rug, terracotta pots, warm amber lighting','contemporary indian interior, carved wood furniture, brass hardware, block-print textiles, mud-plaster wall, warm pendant lighting, jewel tone accents','modern indian style, rosewood and brass tones, ceramic accents, jali screen, lime-washed wall, professional interior photography','contemporary indian home, terracotta floor, handloom textiles, teak furniture, brass chandelier, indoor plants'],
+  'contemporary':['contemporary interior design, clean lines, high ceilings, large windows, neutral palette with bold accent, mixed materials, architectural photography','contemporary living space, floating shelves, statement artwork, curved sofa, polished concrete floor, floor-to-ceiling glass','contemporary interior, warm whites, mid-century modern shapes, open plan, dramatic pendant lighting, textured rug','contemporary style, sleek cabinetry, integrated lighting, natural stone, minimal clutter, indoor plants, bright airy atmosphere','contemporary modern home, streamlined furniture, contrasting textures, warm neutral palette, designer lighting'],
+  'luxury-modern':['luxury modern interior, high contrast drama, calacatta marble surfaces, brushed gold fixtures, deep velvet upholstery, professional photography','luxury interior, sculptural sofa in dark velvet, marble with gold veining, statement chandelier, rich jewel tones, ambient mood lighting','high-end luxury interior, upholstered walls, velvet curtains, marble coffee table, brushed brass accents, dramatic lighting','luxury modern home, dark fluted wood paneling, brushed gold hardware, marble and onyx, bespoke furniture, cinematic photography','opulent interior, silk upholstery, crystal chandelier, book-matched marble walls, deep emerald and navy palette'],
+  'earthy-organic':['earthy organic interior, natural sustainable materials, terracotta, rattan, moss green, raw mango wood, clay textures, warm sunlit atmosphere','biophilic interior, living wall of plants, terracotta floor tiles, rattan furniture, ceramic pots, warm natural sunlight','earthy organic interior, raw wood and linen, organic cotton textiles, woven rattan pendant, pampas grass, warm amber light','nature-inspired interior, mango wood furniture, clay wall plaster, jute rug, tropical plants, terracotta accents, golden hour lighting','organic modern interior, live-edge wood, moss green and terracotta palette, hand-crafted ceramics, macramé wall art, abundant plants'],
+};
+const AI_REALISM = 'ultra photorealistic, professional interior design photography, Canon EOS R5, 35mm lens, natural lighting, no people, high resolution 8k, architectural digest quality';
+
+function buildPrompt(styleKey, roomType, variationIndex, customPrompt) {
+  if (customPrompt) return `${customPrompt}, ${AI_REALISM}`;
+  const prompts = AI_THEME_PROMPTS[styleKey] || AI_THEME_PROMPTS['japandi'];
+  const base = prompts[variationIndex % prompts.length];
+  const prefix = AI_ROOM_PREFIXES[roomType] || 'photorealistic interior,';
+  return `${prefix} ${base}, ${AI_REALISM}`;
+}
+
 async function startPrediction(styleKey, roomType, variationIndex, customPrompt) {
-  const res = await fetch('/.netlify/functions/render-start', {
+  const token = await getReplicateToken();
+  const prompt = buildPrompt(styleKey, roomType, variationIndex, customPrompt);
+  const res = await fetch('https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ styleKey, roomType, variationIndex, customPrompt }),
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ input: { prompt, num_inference_steps: 4, width: 1024, height: 768, output_format: 'webp', output_quality: 90 } }),
   });
-  if (!res.ok) throw new Error(`render-start failed: ${res.status}`);
+  if (!res.ok) throw new Error(`Replicate error: ${res.status}`);
   return res.json(); // { id, status, output? }
 }
 
 async function pollPrediction(id, onUpdate, maxWait = 60000) {
+  const token = await getReplicateToken();
   const start = Date.now();
   while (Date.now() - start < maxWait) {
     await new Promise(r => setTimeout(r, 1500));
-    const res = await fetch(`/.netlify/functions/render-poll?id=${id}`);
+    const res = await fetch(`https://api.replicate.com/v1/predictions/${id}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
     const data = await res.json();
-    onUpdate(data);
-    if (data.status === 'succeeded') return data.output;
+    const output = Array.isArray(data.output) ? data.output[0] : data.output;
+    onUpdate({ status: data.status, output });
+    if (data.status === 'succeeded') return output;
     if (data.status === 'failed') throw new Error(data.error || 'Render failed');
   }
   throw new Error('Render timed out');
