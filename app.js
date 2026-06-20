@@ -566,9 +566,11 @@ function handleFileSelect(files) {
     if (file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onload = e => {
-        addUploadThumb({ type: 'image', src: e.target.result, name: file.name });
-        // Show big preview on left panel
-        showRoomImagePreview(e.target.result);
+        const dataUrl = e.target.result;
+        addUploadThumb({ type: 'image', src: dataUrl, name: file.name });
+        showRoomImagePreview(dataUrl);
+        // Analyse first uploaded photo only
+        if (state.uploadedFiles.length === 1) analyzeRoomPhoto(dataUrl);
       };
       reader.readAsDataURL(file);
     } else if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
@@ -576,6 +578,86 @@ function handleFileSelect(files) {
     }
   });
   document.getElementById('fileInput').value = '';
+}
+
+async function analyzeRoomPhoto(dataUrl) {
+  showAnalysisBanner('analyzing');
+  try {
+    const res = await fetch('/.netlify/functions/analyze-room', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageBase64: dataUrl }),
+    });
+    if (!res.ok) throw new Error('Analysis failed');
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    applyRoomAnalysis(data);
+    showAnalysisBanner('done', data);
+  } catch (e) {
+    console.warn('Room analysis failed:', e.message);
+    showAnalysisBanner('error');
+  }
+}
+
+function applyRoomAnalysis(data) {
+  // Auto-fill room type
+  if (data.roomType && !state.room) {
+    state.room = data.roomType;
+    const sel = document.getElementById('roomSelect');
+    if (sel) sel.value = data.roomType;
+  }
+  // Auto-fill dimensions
+  if (data.dims?.length) {
+    state.dims.length = data.dims.length;
+    state.dims.breadth = data.dims.breadth || data.dims.length;
+    state.dims.height = data.dims.height || 10;
+    const lenEl = document.getElementById('roomLength');
+    const widEl = document.getElementById('roomWidth');
+    if (lenEl) lenEl.value = state.dims.length;
+    if (widEl) widEl.value = state.dims.breadth;
+  }
+  // Auto-fill existing furniture
+  if (data.existingFurniture?.length) {
+    state.furniture.existing = data.existingFurniture;
+    // Tick matching chips in the UI
+    data.existingFurniture.forEach(item => {
+      document.querySelectorAll(`.furn-chip[data-item="${item}"]`).forEach(c => c.classList.add('selected'));
+    });
+    renderFurnitureChips();
+  }
+  // Suggest style if user hasn't picked one
+  if (data.currentStyle && data.currentStyle !== 'none' && !state.style.length) {
+    state.style = [data.currentStyle];
+    document.querySelectorAll(`.style-card[data-style="${data.currentStyle}"]`).forEach(c => c.classList.add('selected'));
+  }
+  state.referencePhoto = dataUrl;
+  autosave();
+}
+
+function showAnalysisBanner(status, data) {
+  let banner = document.getElementById('analysisBanner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'analysisBanner';
+    banner.style.cssText = 'margin-top:.8rem;padding:.75rem 1rem;border-radius:12px;font-size:.82rem;display:flex;align-items:center;gap:.6rem;';
+    const preview = document.getElementById('p1ImagePreview');
+    if (preview) preview.appendChild(banner);
+  }
+  if (status === 'analyzing') {
+    banner.style.background = 'rgba(201,146,58,.12)';
+    banner.style.color = '#7a4a10';
+    banner.innerHTML = '<span style="animation:spin 1s linear infinite;display:inline-block">⏳</span> Analysing your room — detecting dimensions, furniture & style…';
+  } else if (status === 'done' && data) {
+    const dimStr = data.dims?.length ? `${data.dims.length}×${data.dims.breadth} ft` : '';
+    const furStr = data.existingFurniture?.slice(0,3).join(', ') || '';
+    banner.style.background = 'rgba(58,138,80,.1)';
+    banner.style.color = '#1a5c30';
+    banner.innerHTML = `✦ Room analysed${dimStr ? ' · ' + dimStr : ''}${furStr ? ' · Found: ' + furStr : ''} · Form auto-filled below`;
+  } else {
+    banner.style.background = 'rgba(180,60,60,.08)';
+    banner.style.color = '#8b2020';
+    banner.innerHTML = '⚠ Could not analyse photo — please fill in details manually';
+  }
 }
 
 function showRoomImagePreview(src) {
