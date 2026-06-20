@@ -1363,20 +1363,20 @@ function resizeImageForAI(dataUrl, maxSize = 512) {
   });
 }
 
-async function startPrediction(imageBase64, styleKey, roomType, variationIndex, customPrompt) {
+async function startPrediction(styleKey, roomType, variationIndex, customPrompt) {
   const res = await fetch('/.netlify/functions/render-start', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ imageBase64, styleKey, roomType, variationIndex, customPrompt }),
+    body: JSON.stringify({ styleKey, roomType, variationIndex, customPrompt }),
   });
   if (!res.ok) throw new Error(`render-start failed: ${res.status}`);
-  return res.json(); // { id, status }
+  return res.json(); // { id, status, output? }
 }
 
-async function pollPrediction(id, onUpdate, maxWait = 120000) {
+async function pollPrediction(id, onUpdate, maxWait = 60000) {
   const start = Date.now();
   while (Date.now() - start < maxWait) {
-    await new Promise(r => setTimeout(r, 2000));
+    await new Promise(r => setTimeout(r, 1500));
     const res = await fetch(`/.netlify/functions/render-poll?id=${id}`);
     const data = await res.json();
     onUpdate(data);
@@ -1389,29 +1389,8 @@ async function pollPrediction(id, onUpdate, maxWait = 120000) {
 // State for renders
 const aiRenders = {}; // { designId: { status, url } }
 
-/* Fetch + resize the base image once, shared across all renders */
-async function getBaseImage() {
-  if (state.referencePhoto) return resizeImageForAI(state.referencePhoto);
-  try {
-    const rankedDesigns = getAIRecommendedDesigns();
-    const topTheme = STYLE_THEMES[rankedDesigns[0]?.styleKey] || STYLE_THEMES['japandi'];
-    const roomType = state.room || 'living';
-    const url = topTheme.roomImages?.[roomType] || topTheme.img ||
-      'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=512&q=80';
-    const resp = await fetch(url);
-    const blob = await resp.blob();
-    const dataUrl = await new Promise(res => {
-      const r = new FileReader(); r.onload = e => res(e.target.result); r.readAsDataURL(blob);
-    });
-    return resizeImageForAI(dataUrl);
-  } catch (e) {
-    console.warn('Base image fetch failed:', e.message);
-    return null;
-  }
-}
-
 /* Render a single design by ID; used both for auto top-pick and on-demand clicks */
-async function renderOneDesign(designId, baseImage) {
+async function renderOneDesign(designId) {
   const d = DESIGNS.find(x => x.id === designId);
   if (!d) return;
   const roomType = state.room || 'living';
@@ -1423,10 +1402,19 @@ async function renderOneDesign(designId, baseImage) {
   if (activeId === d.id || !activeId) p2ShowRenderLoading(d);
 
   try {
-    const img = baseImage || await getBaseImage();
-    if (!img) throw new Error('No base image');
-    const { id } = await startPrediction(img, d.styleKey, roomType, 0);
-    const url = await pollPrediction(id, (data) => {
+    const result = await startPrediction(d.styleKey, roomType, 0);
+
+    // FLUX-schnell with 'Prefer: wait' may return result immediately
+    if (result.status === 'succeeded' && result.output) {
+      aiRenders[d.id] = { status: 'done', url: result.output };
+      updateCardRenderState(d.id, 'done', result.output);
+      const nowActive = parseInt(document.getElementById('p2ConfirmBtn')?.dataset.pendingId);
+      if (nowActive === d.id || !nowActive) p2UpdatePreviewImage(result.output, d);
+      return;
+    }
+
+    // Otherwise poll until done
+    const url = await pollPrediction(result.id, (data) => {
       if (data.status === 'processing') updateCardRenderState(d.id, 'processing', null);
     });
     aiRenders[d.id] = { status: 'done', url };
@@ -1449,9 +1437,7 @@ async function startAIRenders() {
   });
 
   // Only auto-render the top pick — fastest perceived experience
-  const baseImage = await getBaseImage();
-  if (!baseImage) return;
-  renderOneDesign(rankedDesigns[0].id, baseImage);
+  renderOneDesign(rankedDesigns[0].id);
 }
 
 function updateCardRenderState(designId, status, url) {
@@ -1479,8 +1465,7 @@ function updateCardRenderState(designId, status, url) {
     b.onclick = async (e) => {
       e.stopPropagation();
       b.remove();
-      const baseImg = await getBaseImage();
-      renderOneDesign(designId, baseImg);
+      renderOneDesign(designId);
     };
     wrap?.appendChild(b);
 
@@ -1504,8 +1489,7 @@ function updateCardRenderState(designId, status, url) {
     b.onclick = async (e) => {
       e.stopPropagation();
       b.remove();
-      const baseImg = await getBaseImage();
-      renderOneDesign(designId, baseImg);
+      renderOneDesign(designId);
     };
     wrap?.appendChild(b);
   }
@@ -2009,29 +1993,28 @@ async function triggerP3Rerender() {
   const sofaLabel  = `${state.sofa?.style || 'modular'} ${state.sofa?.material || 'fabric'} sofa`;
   const lightLabel = (state.lighting || 'warm') + ' lighting';
 
-  // Fetch the current room image as base64 to send to AI
   try {
-    const resp = await fetch(img.src);
-    const blob = await resp.blob();
-    const base64 = await new Promise(res => { const r=new FileReader(); r.onload=e=>res(e.target.result); r.readAsDataURL(blob); });
-
-    const customKey = `${d.styleKey}-custom`;
     const customPrompt = `A beautiful ${room.replace(/-/g,' ')} interior in ${d.name} style, ${wallName} painted walls, ${floorLabel} flooring, ${sofaLabel}, ${lightLabel}, professional interior photography`;
 
-    const { id } = await startPrediction(base64, customKey, room, 0, customPrompt);
-    await pollPrediction(id, (status, url) => {
-      if (url) {
-        // Crossfade in the AI result
-        const newImg = document.getElementById('p3RoomImg');
-        if (newImg) {
-          newImg.style.opacity = '0';
-          newImg.src = url;
-          newImg.onload = () => { newImg.style.opacity = '1'; };
-        }
-        label.textContent = '✦ AI Preview';
-        btn.disabled = false;
+    const result = await startPrediction(d.styleKey, room, 0, customPrompt);
+
+    const applyUrl = (url) => {
+      const newImg = document.getElementById('p3RoomImg');
+      if (newImg) {
+        newImg.style.opacity = '0';
+        newImg.src = url;
+        newImg.onload = () => { newImg.style.transition = 'opacity .4s'; newImg.style.opacity = '1'; };
       }
-    });
+      label.textContent = '✦ AI Preview';
+      btn.disabled = false;
+    };
+
+    if (result.status === 'succeeded' && result.output) {
+      applyUrl(result.output);
+    } else {
+      const url = await pollPrediction(result.id, () => {});
+      applyUrl(url);
+    }
   } catch(e) {
     label.textContent = '✦ AI Preview';
     btn.disabled = false;
