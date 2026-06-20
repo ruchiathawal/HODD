@@ -1223,69 +1223,79 @@ function renderStyleCards() {
 /* ═══════════════════════════════════════════════════════════════
    PHASE 2 · DESIGN ENGINE
 ═══════════════════════════════════════════════════════════════ */
-const DESIGNS = [
-  {
-    id: 1, styleKey: 'japandi',
-    name: 'Japandi Warmth',
-    desc: 'Quiet luxury meets wabi-sabi. Low furniture, muted neutrals, and intentional breathing space make every corner feel considered.',
-    mood: ['Calm', 'Grounded', 'Timeless'],
-    materials: ['Bamboo', 'Linen', 'Matte Stone', 'Teak'],
+/* ═══════════════════════════════════════════════════════════════
+   THEME CATALOGUE  (base data per style)
+═══════════════════════════════════════════════════════════════ */
+const THEME_CATALOGUE = {
+  'japandi': {
+    styleKey: 'japandi', baseName: 'Japandi',
+    confidence: 91,
+    variations: [
+      { suffix: 'Warmth',   mood:['Calm','Grounded','Timeless'],   materials:['Bamboo','Linen','Matte Stone','Teak'],        costNum:240000, time:'3–4 weeks', badges:['badge-popular','badge-ai'], badgeText:['Most Popular','AI Pick'], desc:'Quiet luxury meets wabi-sabi. Low furniture, muted neutrals, and intentional breathing space.' },
+      { suffix: 'Mono',     mood:['Clean','Pure','Minimal'],        materials:['White Oak','Cement','Paper Clay','Linen'],     costNum:210000, time:'2–3 weeks', badges:['badge-budget'],             badgeText:['Best Value'],              desc:'All-white palette with raw concrete and whitewash oak. Stripped back to what matters.' },
+      { suffix: 'Forest',   mood:['Earthy','Fresh','Alive'],        materials:['Bamboo','Moss Green','Stone','Rattan'],        costNum:260000, time:'3–4 weeks', badges:[],                           badgeText:[],                          desc:'Forest-bathing indoors. Deep moss greens, stone textures, and an abundance of living plants.' },
+      { suffix: 'Noir',     mood:['Moody','Dramatic','Refined'],    materials:['Dark Oak','Washi Paper','Slate','Charcoal'],   costNum:350000, time:'4–5 weeks', badges:[],                           badgeText:[],                          desc:'Dark japandi — charcoal and ebony oak against paper-white walls. Quiet but commanding.' },
+      { suffix: 'Edit',     mood:['Simple','Airy','Essential'],     materials:['Pine','Cotton Voile','Clay Paint','Jute'],     costNum:160000, time:'2 weeks',   badges:['badge-budget'],             badgeText:['Most Affordable'],         desc:'Just the essentials. Budget-conscious japandi using pine and cotton for the same serene feel.' },
+    ],
     img: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=800&q=80',
-    cost: '₹2,40,000', costNum: 240000, time: '3–4 weeks', confidence: 91,
-    badges: ['badge-popular','badge-ai'], badgeText: ['Most Popular','AI Pick'],
-    insight: 'Saves 18% vs comparable styles. Best for compact spaces under 250 sq ft.',
   },
-  {
-    id: 2, styleKey: 'indian-modern',
-    name: 'Indian Modern',
-    desc: 'Heritage craft meets contemporary form. Teak joinery, handbeaten brass, and hand-blocked textiles rooted in local artisanship.',
-    mood: ['Warm', 'Rich', 'Soulful'],
-    materials: ['Sheesham Teak', 'Handbeaten Brass', 'Jute', 'Hand-block Cotton'],
+  'indian-modern': {
+    styleKey: 'indian-modern', baseName: 'Indian Modern',
+    confidence: 87,
+    variations: [
+      { suffix: 'Heritage', mood:['Warm','Rich','Soulful'],         materials:['Sheesham Teak','Handbeaten Brass','Jute','Block Cotton'], costNum:195000, time:'2–3 weeks', badges:['badge-vastu'],  badgeText:['Vastu Aligned'],  desc:'Heritage craft meets contemporary form. Teak joinery, handbeaten brass, and hand-blocked textiles.' },
+      { suffix: 'Saffron',  mood:['Vibrant','Festive','Lively'],    materials:['Mango Wood','Copper','Silk Cushions','Dhurrie'],          costNum:220000, time:'3 weeks',   badges:[],               badgeText:[],                 desc:'A burst of saffron and turmeric woven through natural wood and copper accents.' },
+      { suffix: 'Slate',    mood:['Modern','Grounded','Sharp'],     materials:['Dark Teak','Slate Stone','Indigo Linen','Iron'],          costNum:275000, time:'3–4 weeks', badges:[],               badgeText:[],                 desc:'Contemporary India in dark teak and slate. Clean lines with craft detail.' },
+      { suffix: 'Terrace',  mood:['Breezy','Open','Artisanal'],     materials:['Cane','Lime Plaster','Terracotta','Khadi'],               costNum:170000, time:'2 weeks',   badges:['badge-budget'], badgeText:['Most Affordable'], desc:'A rooftop terrace brought inside — cane furniture, lime-washed walls, terracotta floor.' },
+      { suffix: 'Opulent',  mood:['Regal','Layered','Luxurious'],   materials:['Rosewood','Zardozi Fabric','Onyx','Gilded Brass'],        costNum:480000, time:'5–6 weeks', badges:[],               badgeText:[],                 desc:'Royal opulence — rosewood, gilded brass, and hand-embroidered zardozi textiles.' },
+    ],
     img: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=800&q=80',
-    cost: '₹1,95,000', costNum: 195000, time: '2–3 weeks', confidence: 87,
-    badges: ['badge-vastu'], badgeText: ['Vastu Aligned'],
-    insight: 'Uses locally-sourced teak and brass. Fastest to execute in your city.',
   },
-  {
-    id: 3, styleKey: 'contemporary',
-    name: 'Coastal Contemporary',
-    desc: 'Airy, sunlit spaces with soft blues, sandy textures, and open sightlines. Lets your room breathe and feel twice its size.',
-    mood: ['Fresh', 'Airy', 'Expansive'],
-    materials: ['Whitewash Oak', 'Rattan', 'Linen Weave', 'Sea Glass Ceramic'],
+  'contemporary': {
+    styleKey: 'contemporary', baseName: 'Contemporary',
+    confidence: 83,
+    variations: [
+      { suffix: 'Coastal',  mood:['Fresh','Airy','Expansive'],      materials:['Whitewash Oak','Rattan','Linen Weave','Sea Glass'], costNum:310000, time:'4–5 weeks', badges:['badge-ai'],     badgeText:['AI Pick'],        desc:'Soft blues, sandy textures, and open sightlines. Lets your room breathe and feel twice its size.' },
+      { suffix: 'Urban',    mood:['Sharp','Dynamic','Confident'],   materials:['Polished Concrete','Steel','Leather','Glass'],      costNum:360000, time:'4–5 weeks', badges:[],               badgeText:[],                 desc:'City energy in dark concrete, steel accents, and bold leather upholstery.' },
+      { suffix: 'Nordic',   mood:['Warm','Hygge','Balanced'],       materials:['Blonde Oak','Bouclé','Matte Brass','Wool'],         costNum:280000, time:'3–4 weeks', badges:[],               badgeText:[],                 desc:'Nordic warmth — blonde oak, bouclé textures, and soft pendants for a hygge-filled home.' },
+      { suffix: 'Gallery',  mood:['Curated','Bold','Expressive'],   materials:['White Plaster','Oak','Abstract Art','Terrazzo'],    costNum:340000, time:'4 weeks',   badges:[],               badgeText:[],                 desc:'A gallery-style space where bold art and clean architecture share the spotlight.' },
+      { suffix: 'Breeze',   mood:['Bright','Open','Relaxed'],       materials:['White Oak','Sheer Linen','Cane','Marble'],          costNum:250000, time:'3 weeks',   badges:['badge-budget'], badgeText:['Best Value'],      desc:'Light-flooded and breezy. Sheer curtains, cane details, and white marble — effortlessly open.' },
+    ],
     img: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80',
-    cost: '₹3,10,000', costNum: 310000, time: '4–5 weeks', confidence: 83,
-    badges: ['badge-ai'], badgeText: ['AI Pick'],
-    insight: 'Maximises natural light. Ideal for south-facing rooms. Improves space feel by 23%.',
   },
-  {
-    id: 4, styleKey: 'luxury-modern',
-    name: 'Luxury Modern',
-    desc: 'High-contrast drama — marble, velvet, and brushed gold in a space that commands attention without trying too hard.',
-    mood: ['Bold', 'Opulent', 'Dramatic'],
-    materials: ['Calacatta Marble', 'Brushed Gold', 'Bouclé Velvet', 'Smoked Glass'],
+  'luxury-modern': {
+    styleKey: 'luxury-modern', baseName: 'Luxury Modern',
+    confidence: 88,
+    variations: [
+      { suffix: 'Marble',   mood:['Bold','Opulent','Dramatic'],     materials:['Calacatta Marble','Brushed Gold','Bouclé Velvet','Smoked Glass'], costNum:580000, time:'5–6 weeks', badges:['badge-ai'],    badgeText:['AI Pick'],        desc:'High-contrast drama — calacatta marble, velvet, and brushed gold commanding every surface.' },
+      { suffix: 'Obsidian', mood:['Dark','Cinematic','Powerful'],   materials:['Black Granite','Onyx','Chrome','Dark Velvet'],                    costNum:680000, time:'6 weeks',   badges:[],              badgeText:[],                 desc:'Obsidian and chrome — a cinematic space built for pure dramatic impact.' },
+      { suffix: 'Ivory',    mood:['Serene','Premium','Airy'],       materials:['Ivory Plaster','Alabaster','Cream Bouclé','Travertine'],          costNum:520000, time:'5 weeks',   badges:[],              badgeText:[],                 desc:'All-ivory luxury — travertine, cream bouclé, and alabaster in a space of quiet grandeur.' },
+      { suffix: 'Emerald',  mood:['Rich','Jewel-toned','Lush'],     materials:['Emerald Velvet','Dark Walnut','Brass','Terrazzo'],                costNum:620000, time:'5–6 weeks', badges:[],              badgeText:[],                 desc:'Deep emerald velvet against dark walnut and brushed brass — lush jewel-tone luxury.' },
+      { suffix: 'Suite',    mood:['Refined','Hotel-grade','Clean'], materials:['Linen','Walnut','Cashmere','Matte Stone'],                        costNum:450000, time:'4–5 weeks', badges:['badge-budget'], badgeText:['Best Value'],     desc:'Five-star hotel suite energy — linen, walnut, and cashmere in a restrained luxury edit.' },
+    ],
     img: 'https://images.unsplash.com/photo-1631679706909-1844bbd07221?auto=format&fit=crop&w=800&q=80',
-    cost: '₹5,80,000', costNum: 580000, time: '5–6 weeks', confidence: 88,
-    badges: ['badge-budget'], badgeText: ['Best Value'],
-    insight: 'Premium materials at 22% below market average. Highest resale value uplift.',
   },
-  {
-    id: 5, styleKey: 'earthy-organic',
-    name: 'Earthy Organic',
-    desc: 'Clay, cane, and moss-green linen — a room that feels like it grew there. Tactile, sustainable, and effortlessly liveable.',
-    mood: ['Natural', 'Tactile', 'Serene'],
-    materials: ['Rattan', 'Terracotta', 'Moss Linen', 'Raw Mango Wood'],
+  'earthy-organic': {
+    styleKey: 'earthy-organic', baseName: 'Earthy Organic',
+    confidence: 85,
+    variations: [
+      { suffix: 'Clay',     mood:['Natural','Tactile','Serene'],    materials:['Rattan','Terracotta','Moss Linen','Raw Mango Wood'],   costNum:160000, time:'2 weeks',   badges:['badge-budget'], badgeText:['Most Affordable'], desc:'Clay, cane, and moss-green linen — a room that feels like it grew there. Sustainable and liveable.' },
+      { suffix: 'Grove',    mood:['Lush','Alive','Breathing'],      materials:['Live-edge Wood','Moss','Jute','River Stone'],          costNum:195000, time:'2–3 weeks', badges:[],               badgeText:[],                  desc:'A grove indoors — live-edge wood, river stones, hanging plants, and raw jute everywhere.' },
+      { suffix: 'Sahara',   mood:['Warm','Sandy','Desert-inspired'],materials:['Adobe Clay','Camel Linen','Driftwood','Sand Stone'],   costNum:180000, time:'2–3 weeks', badges:[],               badgeText:[],                  desc:'Desert warmth — adobe clay walls, camel linen, and driftwood in sandy, sun-baked tones.' },
+      { suffix: 'Prairie',  mood:['Rustic','Cozy','Handcrafted'],   materials:['Reclaimed Wood','Cotton Knit','Wheat Grass','Wool'],   costNum:170000, time:'2 weeks',   badges:[],               badgeText:[],                  desc:'Handcrafted and cozy — reclaimed wood, woven cotton, and wheat-tone textiles for a rustic feel.' },
+      { suffix: 'Biophilic',mood:['Green','Healing','Alive'],       materials:['Bamboo','Monstera Leaves','Cork','Hemp'],             costNum:220000, time:'3 weeks',   badges:['badge-ai'],     badgeText:['AI Pick'],         desc:'Maximum biophilia — bamboo, cork floors, and walls of living plants for a healing sanctuary.' },
+    ],
     img: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80',
-    cost: '₹1,60,000', costNum: 160000, time: '2 weeks', confidence: 85,
-    badges: ['badge-budget'], badgeText: ['Most Affordable'],
-    insight: 'Easiest to maintain. Uses natural, washable fabrics — ideal for families and pets.',
   },
-];
+};
 
 /* ═══════════════════════════════════════════════════════════════
    AI RECOMMENDATION ENGINE
 ═══════════════════════════════════════════════════════════════ */
-function getAIRecommendedDesigns() {
-  const tier = state.budget.tier; // 0=budget 1=mid 2=premium 3=luxury
+let DESIGNS = []; // populated dynamically by buildDesignsForTopTheme()
+
+function pickTopThemeKey() {
+  const tier = state.budget.tier;
   const styles = state.style;
   const constraints = state.constraints;
   const room = state.room;
@@ -1295,60 +1305,79 @@ function getAIRecommendedDesigns() {
     'contemporary':  ['modern-minimal','luxury-modern','industrial'],
     'luxury-modern': ['contemporary','industrial'],
     'earthy-organic':['warm-minimal','bohemian','scandinavian'],
-    'scandinavian':  ['japandi','warm-minimal'],
-    'modern-minimal':['japandi','contemporary','industrial'],
-    'warm-minimal':  ['japandi','earthy-organic','scandinavian'],
-    'bohemian':      ['earthy-organic','indian-modern','warm-minimal'],
-    'industrial':    ['modern-minimal','contemporary'],
   };
-  return DESIGNS.map(d => {
-    let score = d.confidence;
-    if (styles.includes(d.styleKey)) score += 18;
-    else if (adjacent[d.styleKey]?.some(s => styles.includes(s))) score += 6;
-    const dTier = d.costNum<200000?0:d.costNum<400000?1:d.costNum<700000?2:3;
-    if (dTier===tier) score+=10;
-    else if (Math.abs(dTier-tier)===1) score+=2;
-    else score-=12;
-    if (constraints.has('vastu') && d.badges.includes('badge-vastu')) score+=8;
-    if (constraints.has('rental') && d.costNum<250000) score+=5;
-    if (constraints.has('kids') && d.costNum<280000) score+=4;
-    if (constraints.has('pet') && ['earthy-organic','japandi'].includes(d.styleKey)) score+=4;
-    if (constraints.has('storage') && d.styleKey==='scandinavian') score+=3;
-    if (room==='bedroom' && ['japandi','warm-minimal','scandinavian'].includes(d.styleKey)) score+=4;
-    if (room==='office' && ['modern-minimal','industrial','contemporary'].includes(d.styleKey)) score+=4;
-    if (room==='kids' && d.costNum<300000) score+=3;
-    if (room==='living' && ['indian-modern','contemporary','luxury-modern'].includes(d.styleKey)) score+=3;
-    if (room==='dining' && ['indian-modern','contemporary','scandinavian'].includes(d.styleKey)) score+=3;
-    return { ...d, aiScore: Math.min(99, Math.max(55, Math.round(score))) };
-  }).sort((a,b) => b.aiScore - a.aiScore);
+  const scores = Object.values(THEME_CATALOGUE).map(t => {
+    let score = t.confidence;
+    if (styles.includes(t.styleKey)) score += 18;
+    else if (adjacent[t.styleKey]?.some(s => styles.includes(s))) score += 6;
+    const avgCost = t.variations.reduce((s,v)=>s+v.costNum,0)/t.variations.length;
+    const dTier = avgCost<200000?0:avgCost<400000?1:avgCost<700000?2:3;
+    if (dTier===tier) score+=10; else if(Math.abs(dTier-tier)===1) score+=4; else score-=10;
+    if (constraints.has('vastu') && t.styleKey==='indian-modern') score+=8;
+    if (constraints.has('rental') && ['japandi','earthy-organic'].includes(t.styleKey)) score+=5;
+    if (constraints.has('kids') && ['earthy-organic','japandi'].includes(t.styleKey)) score+=4;
+    if (constraints.has('pet') && ['earthy-organic','japandi'].includes(t.styleKey)) score+=4;
+    if (room==='bedroom' && ['japandi','earthy-organic'].includes(t.styleKey)) score+=4;
+    if (room==='office' && ['contemporary','luxury-modern'].includes(t.styleKey)) score+=4;
+    if (room==='living' && ['indian-modern','contemporary','luxury-modern'].includes(t.styleKey)) score+=3;
+    if (room==='dining' && ['indian-modern','contemporary'].includes(t.styleKey)) score+=3;
+    return { styleKey: t.styleKey, score: Math.min(99, Math.max(55, Math.round(score))) };
+  });
+  scores.sort((a,b)=>b.score-a.score);
+  return { styleKey: scores[0].styleKey, aiScore: scores[0].score };
+}
+
+function buildDesignsForTopTheme() {
+  const { styleKey, aiScore } = pickTopThemeKey();
+  const theme = THEME_CATALOGUE[styleKey];
+  DESIGNS = theme.variations.map((v, i) => ({
+    id: i + 1,
+    styleKey,
+    variationIndex: i,
+    name: `${theme.baseName} · ${v.suffix}`,
+    desc: v.desc,
+    mood: v.mood,
+    materials: v.materials,
+    img: theme.img,
+    cost: formatINR(v.costNum), costNum: v.costNum,
+    time: v.time,
+    confidence: theme.confidence,
+    badges: v.badges, badgeText: v.badgeText,
+    insight: v.desc,
+    aiScore: i === 0 ? aiScore : Math.max(aiScore - 5 - i * 3, 60),
+  }));
+  return { styleKey, aiScore, themeName: theme.baseName };
+}
+
+function getAIRecommendedDesigns() {
+  if (!DESIGNS.length) buildDesignsForTopTheme();
+  return [...DESIGNS].sort((a,b) => b.aiScore - a.aiScore);
 }
 
 function buildAIBanner() {
-  const ranked = getAIRecommendedDesigns();
-  const top = ranked[0];
-  const styleNames = state.style.map(s => STYLE_THEMES[s]?.name || s);
+  const { styleKey, aiScore, themeName } = buildDesignsForTopTheme();
+  const theme = THEME_CATALOGUE[styleKey];
   const parts = [];
-  if (styleNames.length) parts.push(styleNames.join(' & '));
   if (state.room) parts.push(state.room.charAt(0).toUpperCase() + state.room.slice(1) + ' Room');
   parts.push(state.budget.label + ' budget');
 
-  const topImg = top?.img || (STYLE_THEMES[top?.styleKey]?.img) || '';
-  const topThumb = topImg ? `<img src="${topImg}" class="ai-banner-thumb" alt="${top.name}" />` : `<span class="ai-reco-icon">✦</span>`;
+  const topImg = theme?.img || '';
+  const topThumb = topImg ? `<img src="${topImg}" class="ai-banner-thumb" alt="${themeName}" />` : `<span class="ai-reco-icon">✦</span>`;
 
   return `<div class="ai-reco-banner2">
     ${topThumb}
     <div class="ai-banner-body">
-      <div class="ai-banner-title">✦ AI picked <em>${top?.name || 'your best match'}</em> for your space</div>
-      <div class="ai-banner-sub">Analysed ${parts.join(' · ')} across ${ranked.length} styles — <strong>${top?.aiScore}% match</strong></div>
+      <div class="ai-banner-title">✦ AI picked <em>${themeName}</em> for your space</div>
+      <div class="ai-banner-sub">Showing 5 variations · ${parts.join(' · ')} — <strong>${aiScore}% match</strong></div>
     </div>
-    <div class="ai-banner-score">${top?.aiScore}<span>%</span></div>
+    <div class="ai-banner-score">${aiScore}<span>%</span></div>
   </div>`;
 }
 
 function goPhase2() {
+  DESIGNS = []; // reset so buildDesignsForTopTheme() re-runs with current state
   showPhase(2);
   renderDesignCards();
-  // Always kick off AI renders — uses uploaded photo if available, else style reference image
   startAIRenders();
 }
 
@@ -1452,7 +1481,7 @@ async function renderOneDesign(designId) {
   if (activeId === d.id || !activeId) p2ShowRenderLoading(d);
 
   try {
-    const result = await startPrediction(d.styleKey, roomType, 0);
+    const result = await startPrediction(d.styleKey, roomType, d.variationIndex ?? 0);
 
     // FLUX-schnell with 'Prefer: wait' may return result immediately
     if (result.status === 'succeeded' && result.output) {
