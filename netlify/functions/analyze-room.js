@@ -14,7 +14,7 @@ exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return { statusCode: 500, headers, body: JSON.stringify({ error: 'API key not configured' }) };
 
   try {
@@ -26,26 +26,7 @@ exports.handler = async (event) => {
     const mediaType = imageBase64.startsWith('data:image/png') ? 'image/png' :
                       imageBase64.startsWith('data:image/webp') ? 'image/webp' : 'image/jpeg';
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1024,
-        messages: [{
-          role: 'user',
-          content: [
-            {
-              type: 'image',
-              source: { type: 'base64', media_type: mediaType, data: base64Data },
-            },
-            {
-              type: 'text',
-              text: `Analyse this room photo and return a JSON object only (no explanation, no markdown):
+    const prompt = `Analyse this room photo and return a JSON object only (no explanation, no markdown, no code fences):
 {
   "roomType": one of ["living","bedroom","kitchen","dining","bathroom","office","kids","studio"],
   "dims": {
@@ -60,21 +41,33 @@ exports.handler = async (event) => {
   "naturalLight": "low"|"medium"|"high",
   "condition": "needs-renovation"|"good"|"excellent",
   "notes": one short sentence about the room's key characteristic
-}`,
-            },
-          ],
-        }],
-      }),
-    });
+}`;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { inline_data: { mime_type: mediaType, data: base64Data } },
+              { text: prompt },
+            ],
+          }],
+          generationConfig: { temperature: 0.1, maxOutputTokens: 1024 },
+        }),
+      }
+    );
 
     if (!response.ok) {
       const err = await response.text();
-      console.error('Claude API error:', err);
+      console.error('Gemini API error:', err);
       return { statusCode: response.status, headers, body: JSON.stringify({ error: 'Analysis failed' }) };
     }
 
     const result = await response.json();
-    const text = result.content?.[0]?.text || '{}';
+    const text = result.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
 
     // Extract JSON from response (Claude sometimes adds extra text)
     const jsonMatch = text.match(/\{[\s\S]*\}/);
