@@ -209,7 +209,8 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); background-image
 /* ── BUDGET ──────────────────────────────────────────────────── */
 .budget-slider-wrap { }
 .budget-slider { width: 100%; accent-color: var(--accent); cursor: pointer; height: 5px; margin-bottom: .6rem; }
-.budget-labels { display: flex; justify-content: space-between; font-size: .7rem; color: var(--muted); margin-bottom: .5rem; }
+.budget-labels { position: relative; height: 1.2rem; font-size: .7rem; color: var(--muted); margin-bottom: .5rem; }
+.budget-labels span { position: absolute; white-space: nowrap; }
 .budget-tier-row { display: flex; align-items: center; gap: 1rem; }
 .budget-tier { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; background: rgba(201,146,58,.15); color: #7a4a10; padding: .3rem .75rem; border-radius: 100px; border: 1px solid rgba(201,146,58,.3); }
 .budget-display { font-size: 1.4rem; font-weight: 700; color: var(--accent); }

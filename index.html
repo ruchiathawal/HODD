@@ -209,7 +209,12 @@
           <div class="budget-slider-wrap">
             <input type="range" min="50000" max="1500000" step="5000" value="200000" class="budget-slider" id="budgetSlider" oninput="updateBudget(this.value)" />
             <div class="budget-labels">
-              <span>₹50K</span><span>₹1L</span><span>₹2L</span><span>₹5L</span><span>₹8L</span><span>₹15L+</span>
+              <span style="left:0%">₹50K</span>
+              <span style="left:3.4%">₹1L</span>
+              <span style="left:10.3%">₹2L</span>
+              <span style="left:31%">₹5L</span>
+              <span style="left:51.7%">₹8L</span>
+              <span style="left:100%;transform:translateX(-100%)">₹15L+</span>
             </div>
             <div class="budget-tier-row">
               <span class="budget-tier" id="budgetTier">Mid-Range</span>
