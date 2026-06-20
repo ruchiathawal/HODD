@@ -58,7 +58,15 @@ function showPhase(n) {
   autosave();
 }
 
-function startFlow() { showScreen('wizard'); showPhase(1); }
+function startFlow() { showScreen('wizard'); showPhase(1); warmReplicate(); }
+
+/* Fire a tiny placeholder prediction to wake the Replicate model while user
+   fills in Step 1 — so by the time they reach Phase 2 the cold-start is gone. */
+async function warmReplicate() {
+  try {
+    await fetch('/.netlify/functions/render-poll?id=warmup', { method: 'GET' });
+  } catch (_) { /* silent — warmup is best-effort */ }
+}
 function quickStart(card) { state.style = [card.dataset.style]; startFlow(); }
 
 function wizardBack() {
@@ -1381,96 +1389,125 @@ async function pollPrediction(id, onUpdate, maxWait = 120000) {
 // State for renders
 const aiRenders = {}; // { designId: { status, url } }
 
-async function startAIRenders() {
-  const rankedDesigns = getAIRecommendedDesigns();
+/* Fetch + resize the base image once, shared across all renders */
+async function getBaseImage() {
+  if (state.referencePhoto) return resizeImageForAI(state.referencePhoto);
+  try {
+    const rankedDesigns = getAIRecommendedDesigns();
+    const topTheme = STYLE_THEMES[rankedDesigns[0]?.styleKey] || STYLE_THEMES['japandi'];
+    const roomType = state.room || 'living';
+    const url = topTheme.roomImages?.[roomType] || topTheme.img ||
+      'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=512&q=80';
+    const resp = await fetch(url);
+    const blob = await resp.blob();
+    const dataUrl = await new Promise(res => {
+      const r = new FileReader(); r.onload = e => res(e.target.result); r.readAsDataURL(blob);
+    });
+    return resizeImageForAI(dataUrl);
+  } catch (e) {
+    console.warn('Base image fetch failed:', e.message);
+    return null;
+  }
+}
+
+/* Render a single design by ID; used both for auto top-pick and on-demand clicks */
+async function renderOneDesign(designId, baseImage) {
+  const d = DESIGNS.find(x => x.id === designId);
+  if (!d) return;
   const roomType = state.room || 'living';
 
-  // Use uploaded photo if available; otherwise fetch the style-matched room image from Unsplash
-  let baseImageDataUrl = state.referencePhoto;
-  if (!baseImageDataUrl) {
-    try {
-      // Pick the top design's room image as the AI base
-      const topTheme = STYLE_THEMES[rankedDesigns[0]?.styleKey] || STYLE_THEMES['japandi'];
-      const fallbackUrl = topTheme.roomImages?.[roomType] || topTheme.img ||
-        'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=512&q=80';
-      const resp = await fetch(fallbackUrl);
-      const blob = await resp.blob();
-      baseImageDataUrl = await new Promise(res => {
-        const r = new FileReader(); r.onload = e => res(e.target.result); r.readAsDataURL(blob);
-      });
-    } catch (e) {
-      console.warn('Could not fetch fallback base image:', e.message);
-      return; // Can't render without a base image
-    }
+  aiRenders[d.id] = { status: 'loading', url: null };
+  updateCardRenderState(d.id, 'loading', null);
+
+  const activeId = parseInt(document.getElementById('p2ConfirmBtn')?.dataset.pendingId);
+  if (activeId === d.id || !activeId) p2ShowRenderLoading(d);
+
+  try {
+    const img = baseImage || await getBaseImage();
+    if (!img) throw new Error('No base image');
+    const { id } = await startPrediction(img, d.styleKey, roomType, 0);
+    const url = await pollPrediction(id, (data) => {
+      if (data.status === 'processing') updateCardRenderState(d.id, 'processing', null);
+    });
+    aiRenders[d.id] = { status: 'done', url };
+    updateCardRenderState(d.id, 'done', url);
+    const nowActive = parseInt(document.getElementById('p2ConfirmBtn')?.dataset.pendingId);
+    if (nowActive === d.id || !nowActive) p2UpdatePreviewImage(url, d);
+  } catch (err) {
+    console.warn(`Render failed for ${d.name}:`, err.message);
+    aiRenders[d.id] = { status: 'error', url: null };
+    updateCardRenderState(d.id, 'error', null);
   }
+}
 
-  const resizedImage = await resizeImageForAI(baseImageDataUrl);
-  if (!resizedImage) return;
+async function startAIRenders() {
+  const rankedDesigns = getAIRecommendedDesigns();
 
-  // Show loading state on all cards
-  rankedDesigns.forEach(d => {
-    aiRenders[d.id] = { status: 'loading', url: null };
-    updateCardRenderState(d.id, 'loading', null);
+  // Show "Generate AI" buttons on cards 2-5 so user can trigger on demand
+  rankedDesigns.forEach((d, i) => {
+    if (i > 0) updateCardRenderState(d.id, 'idle', null);
   });
 
-  // Update preview panel to show loading
-  p2ShowRenderLoading(rankedDesigns[0]);
-
-  // Start all renders in parallel (one per design)
-  const renderJobs = rankedDesigns.map(async (d, i) => {
-    try {
-      const { id } = await startPrediction(resizedImage, d.styleKey, roomType, 0);
-      const url = await pollPrediction(id, (data) => {
-        if (data.status === 'processing') {
-          updateCardRenderState(d.id, 'processing', null);
-        }
-      });
-      aiRenders[d.id] = { status: 'done', url };
-      updateCardRenderState(d.id, 'done', url);
-      // If this is the currently previewed design, update live preview
-      const activeId = parseInt(document.getElementById('p2ConfirmBtn')?.dataset.pendingId);
-      if (activeId === d.id || i === 0) {
-        p2UpdatePreviewImage(url, d);
-      }
-    } catch (err) {
-      console.warn(`Render failed for ${d.name}:`, err.message);
-      aiRenders[d.id] = { status: 'error', url: null };
-      updateCardRenderState(d.id, 'error', null);
-    }
-  });
-
-  // Don't await all — they resolve individually as each render finishes
+  // Only auto-render the top pick — fastest perceived experience
+  const baseImage = await getBaseImage();
+  if (!baseImage) return;
+  renderOneDesign(rankedDesigns[0].id, baseImage);
 }
 
 function updateCardRenderState(designId, status, url) {
   const card = document.querySelector(`.design-card-compact[data-design-id="${designId}"]`);
   if (!card) return;
-  const thumb = card.querySelector('.dcc-thumb');
-  const badge = card.querySelector('.dcc-render-badge');
+  const thumb  = card.querySelector('.dcc-thumb');
+  const wrap   = card.querySelector('.dcc-thumb-wrap');
+  // Remove any existing badge before placing new one
+  card.querySelector('.dcc-render-badge')?.remove();
 
   if (status === 'loading' || status === 'processing') {
     if (thumb) thumb.style.opacity = '.4';
-    if (!badge) {
-      const b = document.createElement('div');
-      b.className = 'dcc-render-badge';
-      b.innerHTML = '<span class="render-spinner"></span> Rendering…';
-      card.querySelector('.dcc-thumb-wrap')?.appendChild(b);
-    }
+    const b = document.createElement('div');
+    b.className = 'dcc-render-badge';
+    b.innerHTML = '<span class="render-spinner"></span> Rendering…';
+    wrap?.appendChild(b);
+
+  } else if (status === 'idle') {
+    // Show on-demand "Generate AI" button for cards 2-5
+    if (thumb) thumb.style.opacity = '1';
+    const b = document.createElement('button');
+    b.className = 'dcc-render-badge dcc-render-idle';
+    b.title = 'Generate AI render for this style';
+    b.innerHTML = '✦ AI Render';
+    b.onclick = async (e) => {
+      e.stopPropagation();
+      b.remove();
+      const baseImg = await getBaseImage();
+      renderOneDesign(designId, baseImg);
+    };
+    wrap?.appendChild(b);
+
   } else if (status === 'done' && url) {
     if (thumb) {
       thumb.src = url;
       thumb.style.opacity = '1';
       thumb.style.transition = 'opacity .5s ease';
     }
-    const oldBadge = card.querySelector('.dcc-render-badge');
-    if (oldBadge) {
-      oldBadge.innerHTML = '✦ Your room';
-      oldBadge.style.background = 'rgba(58,138,80,.85)';
-    }
+    const b = document.createElement('div');
+    b.className = 'dcc-render-badge';
+    b.innerHTML = '✦ AI render';
+    b.style.background = 'rgba(58,138,80,.85)';
+    wrap?.appendChild(b);
+
   } else if (status === 'error') {
-    const oldBadge = card.querySelector('.dcc-render-badge');
-    if (oldBadge) oldBadge.remove();
     if (thumb) thumb.style.opacity = '1';
+    const b = document.createElement('button');
+    b.className = 'dcc-render-badge dcc-render-idle';
+    b.innerHTML = '↺ Retry';
+    b.onclick = async (e) => {
+      e.stopPropagation();
+      b.remove();
+      const baseImg = await getBaseImage();
+      renderOneDesign(designId, baseImg);
+    };
+    wrap?.appendChild(b);
   }
 }
 
