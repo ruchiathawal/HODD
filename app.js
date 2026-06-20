@@ -1406,12 +1406,18 @@ async function startPrediction(styleKey, roomType, variationIndex, customPrompt)
   const res = await fetch('/.netlify/functions/render-start', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ styleKey, roomType, variationIndex: variationIndex ?? 0, customPrompt }),
+    body: JSON.stringify({
+      styleKey, roomType, variationIndex: variationIndex ?? 0, customPrompt,
+      dims: state.dims,
+      furniture: { existing: state.furniture.existing, wanted: state.furniture.wanted },
+      constraints: [...state.constraints],
+      city: state.city,
+    }),
   });
   if (!res.ok) throw new Error(`render-start failed: ${res.status}`);
   const data = await res.json();
   if (data.error) throw new Error(data.error);
-  return data; // { id, status }
+  return data; // { id, status, output? }
 }
 
 async function pollPrediction(id, onUpdate, maxWait = 60000) {

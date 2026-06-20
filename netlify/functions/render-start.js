@@ -76,7 +76,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { styleKey, roomType, variationIndex = 0, customPrompt } = JSON.parse(event.body);
+    const { styleKey, roomType, variationIndex = 0, customPrompt, dims, furniture, constraints, city } = JSON.parse(event.body);
 
     let fullPrompt;
     if (customPrompt) {
@@ -85,7 +85,19 @@ exports.handler = async (event) => {
       const prompts = THEME_PROMPTS[styleKey] || THEME_PROMPTS['japandi'];
       const basePrompt = prompts[variationIndex % prompts.length];
       const roomPrefix = ROOM_PREFIXES[roomType] || 'photorealistic interior,';
-      fullPrompt = `${roomPrefix} ${basePrompt}, ${REALISM_SUFFIX}`;
+
+      // Build room-specific context from user inputs
+      const parts = [];
+      if (dims?.length && dims?.breadth) parts.push(`${dims.length}x${dims.breadth} foot room`);
+      if (furniture?.existing?.length) parts.push(`keeping existing ${furniture.existing.slice(0,3).join(', ')}`);
+      if (furniture?.wanted?.length) parts.push(`adding new ${furniture.wanted.slice(0,3).join(', ')}`);
+      if (constraints?.includes('vastu')) parts.push('vastu-compliant layout');
+      if (constraints?.includes('rental')) parts.push('no permanent modifications, rental-friendly');
+      if (constraints?.includes('kids')) parts.push('child-safe furniture choices');
+      if (city) parts.push(`${city} home`);
+      const roomContext = parts.length ? `, ${parts.join(', ')},` : ',';
+
+      fullPrompt = `${roomPrefix} ${basePrompt}${roomContext} ${REALISM_SUFFIX}`;
     }
 
     // FLUX-schnell: fast text-to-image, 3-8 seconds, no cold start
@@ -96,6 +108,7 @@ exports.handler = async (event) => {
         headers: {
           'Authorization': `Bearer ${apiToken}`,
           'Content-Type': 'application/json',
+          'Prefer': 'wait=25',
         },
         body: JSON.stringify({
           input: {

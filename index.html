@@ -197,6 +197,16 @@
           </select>
         </div>
 
+        <!-- Room Dimensions -->
+        <div class="input-section">
+          <div class="input-label">📐 Room Size <span style="font-weight:400;opacity:.6">(optional but improves AI accuracy)</span></div>
+          <div style="display:flex;gap:.6rem;align-items:center">
+            <input type="number" id="roomLength" placeholder="Length ft" min="6" max="100" style="flex:1;padding:.6rem .8rem;border:1.5px solid var(--border);border-radius:10px;background:var(--input-bg);font-size:.9rem;color:var(--text)" oninput="state.dims.length=parseInt(this.value)||18" />
+            <span style="color:var(--muted);font-size:.9rem">×</span>
+            <input type="number" id="roomWidth" placeholder="Width ft" min="6" max="100" style="flex:1;padding:.6rem .8rem;border:1.5px solid var(--border);border-radius:10px;background:var(--input-bg);font-size:.9rem;color:var(--text)" oninput="state.dims.breadth=parseInt(this.value)||14" />
+          </div>
+        </div>
+
         <!-- City -->
         <div class="input-section">
           <div class="input-label">📍 City</div>
@@ -992,6 +1002,6 @@
 </section>
 
 <script src="firebase.js"></script>
-<script src="app.js?v=26"></script>
+<script src="app.js?v=27"></script>
 </body>
 </html>
