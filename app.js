@@ -613,14 +613,13 @@ async function runMultiAngleAnalysis() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ images: photos }),
     });
-    if (!res.ok) throw new Error('Analysis failed');
     const data = await res.json();
-    if (data.error) throw new Error(data.error);
+    if (!res.ok || data.error) throw new Error(data.error || 'Analysis failed');
     applyRoomAnalysis(data);
     showAnalysisBanner('done', data, photos.length);
   } catch (e) {
     console.warn('Room analysis failed:', e.message);
-    showAnalysisBanner('error');
+    showAnalysisBanner('error', null, photos.length, e.message);
   }
 }
 
@@ -669,7 +668,7 @@ function applyRoomAnalysis(data) {
   autosave();
 }
 
-function showAnalysisBanner(status, data, photoCount = 1) {
+function showAnalysisBanner(status, data, photoCount = 1, errorMsg = '') {
   let banner = document.getElementById('analysisBanner');
   if (!banner) {
     banner = document.createElement('div');
@@ -699,7 +698,8 @@ function showAnalysisBanner(status, data, photoCount = 1) {
     if (badge) badge.textContent = '✦ Photo uploaded';
     banner.style.background = 'rgba(180,60,60,.08)';
     banner.style.color = '#8b2020';
-    banner.innerHTML = '⚠ Could not analyse photo — please fill in details manually';
+    const errDetail = errorMsg ? ` (${errorMsg.slice(0,120)})` : '';
+    banner.innerHTML = `⚠ Could not analyse photo — please fill in details manually${errDetail}`;
   }
 }
 

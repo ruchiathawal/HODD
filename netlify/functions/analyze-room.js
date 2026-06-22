@@ -80,8 +80,11 @@ Return a JSON object ONLY (no explanation, no markdown, no code fences):
 
     if (!response.ok) {
       const err = await response.text();
-      console.error('Gemini API error:', err);
-      return { statusCode: response.status, headers, body: JSON.stringify({ error: 'Analysis failed' }) };
+      console.error('Gemini API error:', response.status, err);
+      // Surface the actual Gemini error so the frontend can show it
+      let detail = err;
+      try { detail = JSON.parse(err)?.error?.message || err; } catch(_) {}
+      return { statusCode: response.status, headers, body: JSON.stringify({ error: `Gemini ${response.status}: ${detail}` }) };
     }
 
     const result = await response.json();
