@@ -1489,11 +1489,18 @@ function resizeImageForAI(dataUrl, maxSize = 512) {
 }
 
 async function startPrediction(styleKey, roomType, variationIndex, customPrompt) {
+  // Resize uploaded photo for ControlNet (frame-preserved) if available
+  let imageBase64 = null;
+  if (state.referencePhoto) {
+    imageBase64 = await resizeImageForAI(state.referencePhoto, 768);
+  }
+
   const res = await fetch('/.netlify/functions/render-start', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       styleKey, roomType, variationIndex: variationIndex ?? 0, customPrompt,
+      imageBase64,
       dims: state.dims,
       furniture: { existing: state.furniture.existing, wanted: state.furniture.wanted },
       constraints: [...state.constraints],
@@ -1637,7 +1644,9 @@ function p2ShowRenderLoading(design) {
       const el = document.createElement('div');
       el.id = 'p2RenderStatus';
       el.className = 'p2-render-status';
-      el.innerHTML = `<span class="render-spinner"></span> Rendering <em>${design.name}</em> with your room photo…`;
+      el.innerHTML = state.referencePhoto
+        ? `<span class="render-spinner"></span> Restyling <em>your room</em> in ${design.name}…`
+        : `<span class="render-spinner"></span> Generating <em>${design.name}</em> design…`;
       name.parentNode.insertBefore(el, name);
     }
   }

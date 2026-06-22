@@ -56,6 +56,7 @@ const THEME_PROMPTS = {
 };
 
 const REALISM_SUFFIX = 'ultra photorealistic, professional interior design photography, Canon EOS R5, 35mm lens, natural lighting, no people, high resolution 8k, architectural digest quality';
+const NEGATIVE_PROMPT = 'ugly, blurry, low quality, distorted, oversaturated, cartoon, illustration, painting, render, 3d, anime, watermark, text, logo, cropped, missing features, duplicate, deformed, unnatural colors, unrealistic, sketch, drawing';
 
 exports.handler = async (event) => {
   const headers = {
@@ -76,7 +77,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { styleKey, roomType, variationIndex = 0, customPrompt, dims, furniture, constraints, city } = JSON.parse(event.body);
+    const { styleKey, roomType, variationIndex = 0, customPrompt, imageBase64, dims, furniture, constraints, city } = JSON.parse(event.body);
 
     let fullPrompt;
     if (customPrompt) {
@@ -100,28 +101,53 @@ exports.handler = async (event) => {
       fullPrompt = `${roomPrefix} ${basePrompt}${roomContext} ${REALISM_SUFFIX}`;
     }
 
-    // FLUX-schnell: fast text-to-image, 3-8 seconds, no cold start
-    const response = await fetch(
-      'https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions',
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiToken}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'wait=25',
-        },
-        body: JSON.stringify({
-          input: {
-            prompt: fullPrompt,
-            num_inference_steps: 4,
-            width: 1024,
-            height: 768,
-            output_format: 'webp',
-            output_quality: 90,
+    let response;
+
+    if (imageBase64) {
+      // ── Frame-preserved render (user uploaded their room photo) ──
+      // adirik/interior-design: ControlNet img2img — reskins the actual room
+      response = await fetch(
+        'https://api.replicate.com/v1/models/adirik/interior-design/predictions',
+        {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            input: {
+              image: imageBase64,
+              prompt: fullPrompt,
+              negative_prompt: NEGATIVE_PROMPT,
+              guidance_scale: 15,
+              num_inference_steps: 25,
+              strength: 0.8,
+              scheduler: 'DPMSolverMultistep',
+            },
+          }),
+        }
+      );
+    } else {
+      // ── Text-to-image render (no photo — FLUX-schnell, fast) ──
+      response = await fetch(
+        'https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiToken}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'wait=25',
           },
-        }),
-      }
-    );
+          body: JSON.stringify({
+            input: {
+              prompt: fullPrompt,
+              num_inference_steps: 4,
+              width: 1024,
+              height: 768,
+              output_format: 'webp',
+              output_quality: 90,
+            },
+          }),
+        }
+      );
+    }
 
     if (!response.ok) {
       const err = await response.text();
@@ -131,7 +157,7 @@ exports.handler = async (event) => {
 
     const prediction = await response.json();
 
-    // With 'Prefer: wait', FLUX often returns completed result immediately
+    // FLUX with Prefer:wait may return completed result immediately
     if (prediction.status === 'succeeded' && prediction.output) {
       const outputUrl = Array.isArray(prediction.output) ? prediction.output[0] : prediction.output;
       return {
