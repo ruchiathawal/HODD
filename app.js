@@ -583,10 +583,13 @@ function handleFileSelect(files) {
 async function analyzeRoomPhoto(dataUrl) {
   showAnalysisBanner('analyzing');
   try {
+    // Resize to 1024px max before sending — phone photos can be 5MB+
+    // which exceeds Netlify's 6MB function payload limit as base64
+    const resized = await resizeImageForAI(dataUrl, 1024);
     const res = await fetch('/.netlify/functions/analyze-room', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ imageBase64: dataUrl }),
+      body: JSON.stringify({ imageBase64: resized }),
     });
     if (!res.ok) throw new Error('Analysis failed');
     const data = await res.json();
