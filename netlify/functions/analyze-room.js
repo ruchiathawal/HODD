@@ -16,6 +16,7 @@ exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
+  console.log('ANTHROPIC_API_KEY present:', !!apiKey, 'length:', apiKey ? apiKey.length : 0);
   if (!apiKey) return { statusCode: 500, headers, body: JSON.stringify({ error: 'ANTHROPIC_API_KEY not configured' }) };
 
   try {
