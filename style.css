@@ -436,6 +436,12 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); background-image
 .boq-subtotal { display: flex; justify-content: space-between; padding: .4rem 0; color: var(--muted2); font-size: .82rem; border-top: 1px solid var(--border); }
 .boq-grand { display: flex; justify-content: space-between; padding: .6rem 0 .4rem; font-size: 1.05rem; font-weight: 700; color: var(--text); border-top: 2px solid var(--border); }
 .boq-disclaimer { font-size: .68rem; color: var(--muted); margin-top: .5rem; line-height: 1.5; }
+.boq-vendor-row { display: flex; align-items: center; gap: .5rem; padding: .45rem 1.2rem; background: rgba(201,146,58,.04); border-top: 1px solid var(--border); flex-wrap: wrap; }
+.boq-vendor-label { font-size: .68rem; color: var(--muted); }
+.boq-vendor-link { font-size: .7rem; font-weight: 600; color: var(--accent); text-decoration: none; padding: .15rem .55rem; border: 1px solid rgba(201,146,58,.35); border-radius: 100px; }
+.boq-vendor-link:hover { background: rgba(201,146,58,.12); }
+.boq-share-btn { display: flex; align-items: center; gap: .5rem; margin-top: .9rem; width: 100%; justify-content: center; padding: .75rem 1rem; background: #25d366; color: #fff; border: none; border-radius: var(--radius); font-size: .85rem; font-weight: 700; cursor: pointer; letter-spacing: .02em; }
+.boq-share-btn:hover { background: #1ebe5d; }
 .insight-text strong { color: var(--text); }
 
 .decision-controls { display: flex; flex-direction: column; gap: 1.25rem; }
