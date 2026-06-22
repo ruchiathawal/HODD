@@ -664,7 +664,6 @@ function applyRoomAnalysis(data) {
     state.style = [data.currentStyle];
     document.querySelectorAll(`.style-card[data-style="${data.currentStyle}"]`).forEach(c => c.classList.add('selected'));
   }
-  state.referencePhoto = dataUrl;
   autosave();
 }
 
