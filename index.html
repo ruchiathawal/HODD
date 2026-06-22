@@ -143,15 +143,52 @@
 
         <!-- Upload zone (visible when no image) -->
         <div id="p1UploadArea">
-          <input type="file" id="fileInput" multiple accept="image/*,.pdf,application/pdf" style="display:none" onchange="handleFileSelect(this.files)" />
-          <div class="upload-zone p1-upload-zone" id="uploadZone"
-               onclick="document.getElementById('fileInput').click()"
-               ondragover="event.preventDefault();this.classList.add('drag-over')"
-               ondragleave="this.classList.remove('drag-over')"
-               ondrop="handleDrop(event)">
-            <div class="upload-icon">🖼</div>
-            <div class="upload-title">Drop your room photo here</div>
-            <div class="upload-sub">JPG, PNG, HEIC, WebP · or tap to browse</div>
+          <div class="angle-guide">Two angles = better measurements</div>
+          <div class="angle-slots">
+            <!-- Slot 0: doorway shot -->
+            <div class="angle-slot" id="angleSlot0" onclick="triggerSlotUpload(0)">
+              <input type="file" id="slotInput0" accept="image/*" capture="environment" style="display:none" onchange="handleSlotFile(0,this.files)" />
+              <div class="angle-slot-empty" id="slotEmpty0">
+                <svg class="angle-diagram" viewBox="0 0 80 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="4" y="8" width="72" height="48" rx="3" stroke="currentColor" stroke-width="1.5"/>
+                  <line x1="4" y1="8" x2="22" y2="2" stroke="currentColor" stroke-width="1.2"/>
+                  <line x1="76" y1="8" x2="58" y2="2" stroke="currentColor" stroke-width="1.2"/>
+                  <line x1="22" y1="2" x2="58" y2="2" stroke="currentColor" stroke-width="1.2"/>
+                  <circle cx="40" cy="34" r="7" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M34 22 L40 14 L46 22" stroke="currentColor" stroke-width="1.2" fill="none"/>
+                </svg>
+                <div class="angle-slot-label">Shot 1</div>
+                <div class="angle-slot-sub">From the doorway</div>
+                <div class="angle-slot-hint">Face into the room</div>
+              </div>
+              <div class="angle-slot-filled hidden" id="slotFilled0">
+                <img class="angle-thumb" id="slotThumb0" src="" alt="Shot 1"/>
+                <div class="angle-slot-check">✓</div>
+              </div>
+            </div>
+            <!-- Slot 1: corner shot -->
+            <div class="angle-slot" id="angleSlot1" onclick="triggerSlotUpload(1)">
+              <input type="file" id="slotInput1" accept="image/*" capture="environment" style="display:none" onchange="handleSlotFile(1,this.files)" />
+              <div class="angle-slot-empty" id="slotEmpty1">
+                <svg class="angle-diagram" viewBox="0 0 80 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="4" y="8" width="72" height="48" rx="3" stroke="currentColor" stroke-width="1.5"/>
+                  <line x1="4" y1="8" x2="22" y2="2" stroke="currentColor" stroke-width="1.2"/>
+                  <line x1="76" y1="8" x2="58" y2="2" stroke="currentColor" stroke-width="1.2"/>
+                  <line x1="22" y1="2" x2="58" y2="2" stroke="currentColor" stroke-width="1.2"/>
+                  <line x1="4" y1="8" x2="4" y2="56" stroke="currentColor" stroke-width="2"/>
+                  <line x1="4" y1="56" x2="76" y2="56" stroke="currentColor" stroke-width="2"/>
+                  <circle cx="10" cy="50" r="4" stroke="currentColor" stroke-width="1.5"/>
+                  <line x1="14" y1="46" x2="68" y2="12" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 2"/>
+                </svg>
+                <div class="angle-slot-label">Shot 2 <span class="optional-tag">optional</span></div>
+                <div class="angle-slot-sub">From a corner</div>
+                <div class="angle-slot-hint">Shoot diagonally across</div>
+              </div>
+              <div class="angle-slot-filled hidden" id="slotFilled1">
+                <img class="angle-thumb" id="slotThumb1" src="" alt="Shot 2"/>
+                <div class="angle-slot-check">✓</div>
+              </div>
+            </div>
           </div>
           <button class="p1-layout-link" onclick="showLayoutPopup()">
             No photo? Let us design your layout →
@@ -161,8 +198,9 @@
         <!-- Big image preview (visible after upload) -->
         <div class="p1-image-preview hidden" id="p1ImagePreview">
           <img id="p1PreviewImg" src="" alt="Your room" />
+          <div class="p1-multi-thumbs" id="p1MultiThumbs"></div>
           <div class="p1-image-badge" id="p1ImageBadge">✦ Analysing your room…</div>
-          <button class="p1-change-btn" onclick="clearRoomImage()">✕ Change photo</button>
+          <button class="p1-change-btn" onclick="clearRoomImage()">✕ Change photos</button>
         </div>
         <!-- hidden thumb grid kept for JS compatibility -->
         <div class="uploaded-grid" id="uploadedGrid" style="display:none"></div>
@@ -1003,6 +1041,6 @@
 </section>
 
 <script src="firebase.js"></script>
-<script src="app.js?v=35"></script>
+<script src="app.js?v=36"></script>
 </body>
 </html>

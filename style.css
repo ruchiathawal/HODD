@@ -569,6 +569,24 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); background-image
 /* Upload zone (phase 1 variant — fills column) */
 .p1-upload-zone { min-height: 340px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 
+/* ── Multi-angle guided upload ───────────────────────────────── */
+.angle-guide { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); text-align: center; margin-bottom: .75rem; }
+.angle-slots { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-bottom: .25rem; }
+.angle-slot { border: 2px dashed var(--border2); border-radius: var(--radius); padding: 1.25rem .75rem; text-align: center; cursor: pointer; transition: var(--transition); background: var(--surface); min-height: 180px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+.angle-slot:hover { border-color: var(--accent); background: rgba(201,146,58,.05); }
+.angle-slot-empty { display: flex; flex-direction: column; align-items: center; gap: .3rem; }
+.angle-diagram { width: 64px; height: 48px; color: var(--muted); margin-bottom: .4rem; }
+.angle-slot:hover .angle-diagram { color: var(--accent); }
+.angle-slot-label { font-size: .82rem; font-weight: 700; color: var(--text); }
+.angle-slot-sub { font-size: .78rem; color: var(--accent); font-weight: 600; }
+.angle-slot-hint { font-size: .7rem; color: var(--muted); }
+.optional-tag { font-size: .62rem; font-weight: 600; background: rgba(201,146,58,.15); color: var(--accent); padding: .1rem .4rem; border-radius: 100px; vertical-align: middle; margin-left: .25rem; }
+.angle-slot-filled { width: 100%; height: 100%; position: relative; }
+.angle-thumb { width: 100%; height: 100%; object-fit: cover; border-radius: calc(var(--radius) - 4px); display: block; }
+.angle-slot-check { position: absolute; top: .5rem; right: .5rem; background: #25d366; color: #fff; font-size: .72rem; font-weight: 700; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.p1-multi-thumbs { display: flex; gap: .4rem; position: absolute; bottom: .6rem; right: .75rem; }
+.p1-multi-thumbs img { width: 44px; height: 44px; object-fit: cover; border-radius: 6px; border: 2px solid rgba(255,255,255,.7); }
+
 /* No-photo link */
 .p1-layout-link { display: block; text-align: center; margin-top: .9rem; font-size: .82rem; font-weight: 600; color: var(--accent); background: none; border: none; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; transition: var(--transition); }
 .p1-layout-link:hover { opacity: .75; }

@@ -4,7 +4,7 @@
 const state = {
   room: null, style: [], city: '', budget: { label: 'Mid-Range', value: '₹2,00,000', tier: 1, numValue: 200000 },
   constraints: new Set(), notes: '',
-  uploadedFiles: [], referencePhoto: null,
+  uploadedFiles: [], referencePhoto: null, roomPhotos: [],
   dims: { length: 18, breadth: 14, height: 10 },
   shape: 'rectangle',
   pillars: [],
@@ -560,46 +560,78 @@ function formatINR(num) {
 }
 
 /* real file upload ─────────────────────────────────────────── */
-function handleFileSelect(files) {
-  [...files].forEach(file => {
-    if (state.uploadedFiles.length >= 8) return;
-    if (file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = e => {
-        const dataUrl = e.target.result;
-        addUploadThumb({ type: 'image', src: dataUrl, name: file.name });
-        showRoomImagePreview(dataUrl);
-        // Analyse first uploaded photo only
-        if (state.uploadedFiles.length === 1) analyzeRoomPhoto(dataUrl);
-      };
-      reader.readAsDataURL(file);
-    } else if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
-      addUploadThumb({ type: 'pdf', src: null, name: file.name });
-    }
-  });
-  document.getElementById('fileInput').value = '';
+// ── Multi-angle photo upload ───────────────────────────────────
+// state.roomPhotos: array of resized dataUrls (index = slot index)
+
+function triggerSlotUpload(idx) {
+  document.getElementById(`slotInput${idx}`)?.click();
 }
 
-async function analyzeRoomPhoto(dataUrl) {
-  showAnalysisBanner('analyzing');
+function handleSlotFile(idx, files) {
+  const file = files[0];
+  if (!file || !file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = async e => {
+    const resized = await resizeImageForAI(e.target.result, 1024);
+    state.roomPhotos[idx] = resized;
+
+    // Show thumb in slot
+    document.getElementById(`slotEmpty${idx}`).classList.add('hidden');
+    const filled = document.getElementById(`slotFilled${idx}`);
+    filled.classList.remove('hidden');
+    document.getElementById(`slotThumb${idx}`).src = resized;
+
+    // First photo becomes the reference for rendering
+    if (idx === 0) {
+      state.referencePhoto = resized;
+      state.uploadedFiles = [{ type: 'image', src: resized }];
+      showRoomImagePreview(resized);
+    } else {
+      // Add 2nd angle thumb to preview bar
+      const bar = document.getElementById('p1MultiThumbs');
+      if (bar) {
+        let img = document.getElementById(`multiThumb${idx}`);
+        if (!img) { img = document.createElement('img'); img.id = `multiThumb${idx}`; bar.appendChild(img); }
+        img.src = resized;
+      }
+    }
+
+    // Run analysis whenever any slot fills
+    runMultiAngleAnalysis();
+  };
+  reader.readAsDataURL(file);
+  document.getElementById(`slotInput${idx}`).value = '';
+}
+
+async function runMultiAngleAnalysis() {
+  const photos = state.roomPhotos.filter(Boolean);
+  if (!photos.length) return;
+  showAnalysisBanner('analyzing', null, photos.length);
   try {
-    // Resize to 1024px max before sending — phone photos can be 5MB+
-    // which exceeds Netlify's 6MB function payload limit as base64
-    const resized = await resizeImageForAI(dataUrl, 1024);
     const res = await fetch('/.netlify/functions/analyze-room', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ imageBase64: resized }),
+      body: JSON.stringify({ images: photos }),
     });
     if (!res.ok) throw new Error('Analysis failed');
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     applyRoomAnalysis(data);
-    showAnalysisBanner('done', data);
+    showAnalysisBanner('done', data, photos.length);
   } catch (e) {
     console.warn('Room analysis failed:', e.message);
     showAnalysisBanner('error');
   }
+}
+
+// Legacy single-file handler (drag-drop fallback)
+function handleFileSelect(files) {
+  [...files].forEach((file, i) => {
+    if (!file.type.startsWith('image/')) return;
+    handleSlotFile(i === 0 ? 0 : 1, [file]);
+  });
+  const inp = document.getElementById('fileInput');
+  if (inp) inp.value = '';
 }
 
 function applyRoomAnalysis(data) {
@@ -637,7 +669,7 @@ function applyRoomAnalysis(data) {
   autosave();
 }
 
-function showAnalysisBanner(status, data) {
+function showAnalysisBanner(status, data, photoCount = 1) {
   let banner = document.getElementById('analysisBanner');
   if (!banner) {
     banner = document.createElement('div');
@@ -649,15 +681,19 @@ function showAnalysisBanner(status, data) {
   if (status === 'analyzing') {
     banner.style.background = 'rgba(201,146,58,.12)';
     banner.style.color = '#7a4a10';
-    banner.innerHTML = '<span style="animation:spin 1s linear infinite;display:inline-block">⏳</span> Analysing your room — detecting dimensions, furniture & style…';
+    const msg = photoCount > 1
+      ? `Analysing ${photoCount} angles — measuring dimensions, furniture & style…`
+      : 'Analysing your room — detecting dimensions, furniture & style…';
+    banner.innerHTML = `<span style="animation:spin 1s linear infinite;display:inline-block">⏳</span> ${msg}`;
   } else if (status === 'done' && data) {
     const dimStr = data.dims?.length ? `${data.dims.length}×${data.dims.breadth} ft` : '';
     const furStr = data.existingFurniture?.slice(0,3).join(', ') || '';
+    const angleStr = photoCount > 1 ? ` · ${photoCount} angles` : '';
     banner.style.background = 'rgba(58,138,80,.1)';
     banner.style.color = '#1a5c30';
-    banner.innerHTML = `✦ Room analysed${dimStr ? ' · ' + dimStr : ''}${furStr ? ' · Found: ' + furStr : ''} · Form auto-filled below`;
+    banner.innerHTML = `✦ Room analysed${angleStr}${dimStr ? ' · ' + dimStr : ''}${furStr ? ' · Found: ' + furStr : ''} · Form auto-filled below`;
     const badge = document.getElementById('p1ImageBadge');
-    if (badge) badge.textContent = `✦ ${dimStr || 'Room'} analysed`;
+    if (badge) badge.textContent = `✦ ${dimStr || 'Room'} analysed${angleStr}`;
   } else {
     const badge = document.getElementById('p1ImageBadge');
     if (badge) badge.textContent = '✦ Photo uploaded';
@@ -678,6 +714,15 @@ function showRoomImagePreview(src) {
 function clearRoomImage() {
   state.uploadedFiles = [];
   state.referencePhoto = null;
+  state.roomPhotos = [];
+  // Reset both slots
+  [0,1].forEach(i => {
+    document.getElementById(`slotEmpty${i}`)?.classList.remove('hidden');
+    document.getElementById(`slotFilled${i}`)?.classList.add('hidden');
+    const inp = document.getElementById(`slotInput${i}`);
+    if (inp) inp.value = '';
+  });
+  document.getElementById('p1MultiThumbs').innerHTML = '';
   document.getElementById('p1ImagePreview').classList.add('hidden');
   document.getElementById('p1UploadArea').classList.remove('hidden');
   updateUploadBadge();
