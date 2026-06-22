@@ -130,9 +130,9 @@ exports.handler = async (event) => {
 
     if (imageBase64) {
       // ── Frame-preserved render (user uploaded their room photo) ──
-      // adirik/interior-design: ControlNet img2img — reskins the actual room
+      // stability-ai/sdxl img2img — reskins the actual room, reliable first-party model
       response = await fetch(
-        'https://api.replicate.com/v1/models/adirik/interior-design/predictions',
+        'https://api.replicate.com/v1/models/stability-ai/sdxl/predictions',
         {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
@@ -141,10 +141,11 @@ exports.handler = async (event) => {
               image: imageBase64,
               prompt: fullPrompt,
               negative_prompt: NEGATIVE_PROMPT,
-              guidance_scale: 12,
+              image_strength: 0.45,
               num_inference_steps: 30,
-              strength: 0.65,
-              scheduler: 'DPMSolverMultistep',
+              guidance_scale: 8,
+              width: 1024,
+              height: 768,
             },
           }),
         }
