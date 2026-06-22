@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────────────
-   HODD · Analyze Room  (multi-angle aware)
+   HODD · Analyze Room  (multi-angle aware, Claude Haiku)
    POST /.netlify/functions/analyze-room
    Body: { images: [dataUrl, ...] }  — up to 3 photos
          { imageBase64: dataUrl }    — legacy single-photo fallback
@@ -15,8 +15,8 @@ exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return { statusCode: 500, headers, body: JSON.stringify({ error: 'API key not configured' }) };
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return { statusCode: 500, headers, body: JSON.stringify({ error: 'ANTHROPIC_API_KEY not configured' }) };
 
   try {
     const body = JSON.parse(event.body);
@@ -30,16 +30,19 @@ exports.handler = async (event) => {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'No image provided' }) };
     }
 
-    // Parse each image into { data, mime_type }
-    const imageParts = rawImages.map(dataUrl => {
+    // Build Claude content blocks — one image block per photo, then the text prompt
+    const imageBlocks = rawImages.map(dataUrl => {
       const base64Data = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
-      const mime_type  = dataUrl.startsWith('data:image/png')  ? 'image/png'  :
+      const media_type = dataUrl.startsWith('data:image/png')  ? 'image/png'  :
                          dataUrl.startsWith('data:image/webp') ? 'image/webp' : 'image/jpeg';
-      return { inline_data: { mime_type, data: base64Data } };
+      return {
+        type: 'image',
+        source: { type: 'base64', media_type, data: base64Data },
+      };
     });
 
-    const angleNote = imageParts.length > 1
-      ? `You are given ${imageParts.length} photos of the SAME room taken from different angles. Synthesise all photos to produce the most accurate analysis — use the doorway shot for overall layout and the corner shot(s) for dimension depth and ceiling height estimation.`
+    const angleNote = rawImages.length > 1
+      ? `You are given ${rawImages.length} photos of the SAME room taken from different angles. Synthesise all photos to produce the most accurate analysis — use the doorway shot for overall layout and the corner shot(s) for dimension depth and ceiling height estimation.`
       : 'You are given one photo of a room.';
 
     const prompt = `${angleNote}
@@ -61,34 +64,33 @@ Return a JSON object ONLY (no explanation, no markdown, no code fences):
   "notes": one short sentence summarising the room's key characteristic
 }`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              ...imageParts,   // all images first
-              { text: prompt },
-            ],
-          }],
-          generationConfig: { temperature: 0.1, maxOutputTokens: 1024 },
-        }),
-      }
-    );
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5',
+        max_tokens: 1024,
+        messages: [{
+          role: 'user',
+          content: [...imageBlocks, { type: 'text', text: prompt }],
+        }],
+      }),
+    });
 
     if (!response.ok) {
       const err = await response.text();
-      console.error('Gemini API error:', response.status, err);
-      // Surface the actual Gemini error so the frontend can show it
+      console.error('Claude API error:', response.status, err);
       let detail = err;
-      try { detail = JSON.parse(err)?.error?.message || err; } catch(_) {}
-      return { statusCode: response.status, headers, body: JSON.stringify({ error: `Gemini ${response.status}: ${detail}` }) };
+      try { detail = JSON.parse(err)?.error?.message || err; } catch (_) {}
+      return { statusCode: response.status, headers, body: JSON.stringify({ error: `Claude ${response.status}: ${detail}` }) };
     }
 
     const result = await response.json();
-    const text = result.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+    const text = result.content?.[0]?.text || '{}';
 
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     const analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
