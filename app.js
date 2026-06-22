@@ -9,6 +9,7 @@ const state = {
   shape: 'rectangle',
   pillars: [],
   furniture: { existing: [], wanted: [], reconfigure: false },
+  vastuDoorDir: null,
   selectedDesign: null, favDesigns: new Set(), compareDesigns: new Set(),
   wallColor: '#F5F0E8', sofa: { style: 'modular', material: 'fabric', color: '#C8C0B0', size: '3-seater' }, floor: 'teak-hardwood', lighting: 'warm', wallFinish: 'matte', lightingType: 'recessed', ceiling: 'plain', curtain: {}, rug: {},
   decor: { plant: true, art: true, rug: false, curtains: false },
@@ -509,6 +510,55 @@ function selectStyle(el) {
 
 function toggleConstraint(key, val) { val ? state.constraints.add(key) : state.constraints.delete(key); }
 
+const VASTU_INAUSPICIOUS = ['S', 'SW'];
+function setVastuDir(dir) {
+  state.vastuDoorDir = dir;
+  // Update button states
+  document.querySelectorAll('.vastu-dir-btn[data-dir]').forEach(btn => {
+    btn.classList.remove('selected');
+    btn.classList.toggle('inauspicious', VASTU_INAUSPICIOUS.includes(btn.dataset.dir));
+  });
+  const selected = document.querySelector(`.vastu-dir-btn[data-dir="${dir}"]`);
+  if (selected) selected.classList.add('selected');
+  // Auto-tick vastu constraint
+  const cb = document.getElementById('vastuConstraintCb');
+  if (cb && !cb.checked) { cb.checked = true; toggleConstraint('vastu', true); }
+  // Show hint
+  const hint = document.getElementById('vastuDoorHint');
+  if (hint && typeof VASTU !== 'undefined') {
+    const info = VASTU.DOOR_AUSPICIOUSNESS[dir];
+    if (info) hint.textContent = `${info.label} — ${info.reason}`;
+  }
+  // Re-render vastu card if analysis already done
+  if (state.vastuAnalysis) renderVastuCard(state.vastuAnalysis);
+}
+
+function renderVastuCard(analysis) {
+  state.vastuAnalysis = analysis;
+  let card = document.getElementById('vastuScoreCard');
+  if (!card) {
+    card = document.createElement('div');
+    card.id = 'vastuScoreCard';
+    card.className = 'vastu-score-card';
+    const preview = document.getElementById('p1ImagePreview');
+    if (preview) preview.appendChild(card);
+  }
+  const stars = '★'.repeat(Math.round(analysis.score / 2)) + '☆'.repeat(5 - Math.round(analysis.score / 2));
+  const allTips = [
+    ...analysis.warnings.map(w => `<li class="warn">${w}</li>`),
+    ...analysis.tips.map(t => `<li>${t}</li>`),
+  ].join('');
+  card.innerHTML = `
+    <div class="vastu-score-row">
+      <span style="font-weight:600;color:var(--text)">🧭 Vastu Score</span>
+      <span class="vastu-score-badge">${analysis.score}/10</span>
+      <span style="color:var(--accent);letter-spacing:1px">${stars}</span>
+      ${analysis.doorAuspiciousness ? `<span style="color:var(--muted);font-size:.75rem">${analysis.doorAuspiciousness.label}</span>` : ''}
+    </div>
+    <ul class="vastu-tips">${allTips}</ul>
+  `;
+}
+
 function toggleFurniture(type, key, btn) {
   const arr = state.furniture[type];
   const idx = arr.indexOf(key);
@@ -662,6 +712,15 @@ function applyRoomAnalysis(data) {
   if (data.currentStyle && data.currentStyle !== 'none' && !state.style.length) {
     state.style = [data.currentStyle];
     document.querySelectorAll(`.style-card[data-style="${data.currentStyle}"]`).forEach(c => c.classList.add('selected'));
+  }
+  // Vastu score card (if door direction is set)
+  if (typeof VASTU !== 'undefined' && state.vastuDoorDir) {
+    const analysis = VASTU.analyse({
+      doorDir: state.vastuDoorDir,
+      roomType: data.roomType || state.room || 'living',
+      furniture: data.existingFurniture || [],
+    });
+    renderVastuCard(analysis);
   }
   autosave();
 }
@@ -1551,6 +1610,7 @@ async function startPrediction(styleKey, roomType, variationIndex, customPrompt)
       furniture: { existing: state.furniture.existing, wanted: state.furniture.wanted },
       constraints: [...state.constraints],
       city: state.city,
+      vastuDoorDir: state.vastuDoorDir,
     }),
   });
   if (!res.ok) throw new Error(`render-start failed: ${res.status}`);

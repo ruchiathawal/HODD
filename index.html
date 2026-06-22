@@ -323,11 +323,28 @@
           </label>
         </div>
 
+        <!-- Vastu Direction -->
+        <div class="input-section" id="vastuSection">
+          <div class="input-label">🧭 Vastu — Main Door Direction <span class="optional-tag">optional</span></div>
+          <div class="vastu-dir-grid" id="vastuDirGrid">
+            <button class="vastu-dir-btn" data-dir="N"  onclick="setVastuDir('N')"  title="North">N</button>
+            <button class="vastu-dir-btn" data-dir="NE" onclick="setVastuDir('NE')" title="Northeast" style="grid-column:2;grid-row:1">NE</button>
+            <button class="vastu-dir-btn" data-dir="NW" onclick="setVastuDir('NW')" title="Northwest" style="grid-column:1;grid-row:2">NW</button>
+            <button class="vastu-dir-btn vastu-dir-center" disabled style="grid-column:2;grid-row:2">🏠</button>
+            <button class="vastu-dir-btn" data-dir="E"  onclick="setVastuDir('E')"  title="East"      style="grid-column:3;grid-row:2">E</button>
+            <button class="vastu-dir-btn" data-dir="W"  onclick="setVastuDir('W')"  title="West"      style="grid-column:1;grid-row:3">W</button>
+            <button class="vastu-dir-btn" data-dir="SW" onclick="setVastuDir('SW')" title="Southwest" style="grid-column:1;grid-row:4">SW</button>
+            <button class="vastu-dir-btn" data-dir="S"  onclick="setVastuDir('S')"  title="South"     style="grid-column:2;grid-row:4">S</button>
+            <button class="vastu-dir-btn" data-dir="SE" onclick="setVastuDir('SE')" title="Southeast" style="grid-column:3;grid-row:4">SE</button>
+          </div>
+          <div id="vastuDoorHint" style="margin-top:.5rem;font-size:.78rem;color:var(--muted);min-height:1.2em"></div>
+        </div>
+
         <!-- Constraints -->
         <div class="input-section">
           <div class="input-label">⚙️ Preferences <span class="optional-tag">optional</span></div>
           <div class="constraints-grid">
-            <label class="constraint-item"><input type="checkbox" onchange="toggleConstraint('vastu',this.checked)" /><span>🧭 Vastu compliant</span></label>
+            <label class="constraint-item"><input type="checkbox" id="vastuConstraintCb" onchange="toggleConstraint('vastu',this.checked)" /><span>🧭 Vastu compliant</span></label>
             <label class="constraint-item"><input type="checkbox" onchange="toggleConstraint('pet',this.checked)" /><span>🐾 Pet-friendly</span></label>
             <label class="constraint-item"><input type="checkbox" onchange="toggleConstraint('rental',this.checked)" /><span>🔧 Rental-friendly</span></label>
             <label class="constraint-item"><input type="checkbox" onchange="toggleConstraint('kids',this.checked)" /><span>👶 Child-safe</span></label>
@@ -1041,6 +1058,7 @@
 </section>
 
 <script src="firebase.js"></script>
-<script src="app.js?v=38"></script>
+<script src="vastu.js?v=1"></script>
+<script src="app.js?v=40"></script>
 </body>
 </html>

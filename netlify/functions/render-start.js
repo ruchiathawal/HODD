@@ -5,6 +5,25 @@
    Returns: { id, status, output? }
 ───────────────────────────────────────────────────────────────── */
 
+// Vastu-aware prompt builder (inline rules — no external import needed)
+function buildVastuPrompt(doorDir, roomType, wantedFurniture = []) {
+  const ZONE_COLORS = {
+    NE:'cream or white', N:'soft green or aqua', NW:'white or light grey',
+    W:'pale blue or white', SW:'earthy brown or tan', S:'coral or warm pink',
+    SE:'warm amber or orange', E:'white or pale ivory',
+  };
+  const parts = ['vastu-compliant layout'];
+  if (roomType === 'bedroom' || wantedFurniture.includes('bed')) parts.push('bed headboard against south or east wall');
+  if (roomType === 'living' || wantedFurniture.includes('sofa')) parts.push('sofa against south or west wall with seating facing east');
+  if (wantedFurniture.includes('tv-unit') || wantedFurniture.includes('desk')) parts.push('TV or electronics on southeast wall');
+  if (roomType === 'kitchen') parts.push('cooking platform on southeast wall');
+  if (roomType === 'office' || wantedFurniture.includes('desk')) parts.push('study desk facing east or north');
+  if (ZONE_COLORS[doorDir]) parts.push(`walls in vastu-appropriate ${ZONE_COLORS[doorDir]} tones`);
+  parts.push('centre of room open and uncluttered (Brahmasthana)');
+  if (['NE','E'].includes(doorDir)) parts.push('natural light from northeast or east windows');
+  return parts.join(', ');
+}
+
 const ROOM_PREFIXES = {
   living:     'photorealistic living room interior,',
   bedroom:    'photorealistic bedroom interior,',
@@ -77,7 +96,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { styleKey, roomType, variationIndex = 0, customPrompt, imageBase64, dims, furniture, constraints, city } = JSON.parse(event.body);
+    const { styleKey, roomType, variationIndex = 0, customPrompt, imageBase64, dims, furniture, constraints, city, vastuDoorDir } = JSON.parse(event.body);
 
     let fullPrompt;
     if (customPrompt) {
@@ -92,7 +111,13 @@ exports.handler = async (event) => {
       if (dims?.length && dims?.breadth) parts.push(`${dims.length}x${dims.breadth} foot room`);
       if (furniture?.existing?.length) parts.push(`keeping existing ${furniture.existing.slice(0,3).join(', ')}`);
       if (furniture?.wanted?.length) parts.push(`adding new ${furniture.wanted.slice(0,3).join(', ')}`);
-      if (constraints?.includes('vastu')) parts.push('vastu-compliant layout');
+      if (constraints?.includes('vastu')) {
+        if (vastuDoorDir) {
+          parts.push(buildVastuPrompt(vastuDoorDir, roomType, furniture?.wanted || []));
+        } else {
+          parts.push('vastu-compliant layout');
+        }
+      }
       if (constraints?.includes('rental')) parts.push('no permanent modifications, rental-friendly');
       if (constraints?.includes('kids')) parts.push('child-safe furniture choices');
       if (city) parts.push(`${city} home`);
