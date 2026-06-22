@@ -1619,18 +1619,22 @@ async function startPrediction(styleKey, roomType, variationIndex, customPrompt)
   return data; // { id, status, output? }
 }
 
-async function pollPrediction(id, onUpdate, maxWait = 60000) {
+async function pollPrediction(id, onUpdate, maxWait = 240000) {
   const start = Date.now();
+  let interval = 2000;
   while (Date.now() - start < maxWait) {
-    await new Promise(r => setTimeout(r, 2000));
+    await new Promise(r => setTimeout(r, interval));
     const res = await fetch(`/.netlify/functions/render-poll?id=${id}`);
     const data = await res.json();
     const output = data.output || null;
-    onUpdate({ status: data.status, output });
+    const elapsed = Math.round((Date.now() - start) / 1000);
+    onUpdate({ status: data.status, output, elapsed });
     if (data.status === 'succeeded') return output;
     if (data.status === 'failed') throw new Error(data.error || 'Render failed');
+    // Back off slightly once processing starts to reduce load
+    if (data.status === 'processing' && interval < 4000) interval = 3000;
   }
-  throw new Error('Render timed out');
+  throw new Error('Render timed out after 4 minutes');
 }
 
 // State for renders
@@ -1662,7 +1666,12 @@ async function renderOneDesign(designId) {
 
     // Otherwise poll until done
     const url = await pollPrediction(result.id, (data) => {
-      if (data.status === 'processing') updateCardRenderState(d.id, 'processing', null);
+      const label = data.status === 'starting'
+        ? `Warming up AI${data.elapsed ? ` · ${data.elapsed}s` : ''}…`
+        : data.status === 'processing'
+        ? `Rendering${data.elapsed ? ` · ${data.elapsed}s` : ''}…`
+        : null;
+      updateCardRenderState(d.id, data.status === 'starting' ? 'loading' : 'processing', null, label);
     });
     aiRenders[d.id] = { status: 'done', url };
     updateCardRenderState(d.id, 'done', url);
@@ -1687,7 +1696,7 @@ async function startAIRenders() {
   renderOneDesign(rankedDesigns[0].id);
 }
 
-function updateCardRenderState(designId, status, url) {
+function updateCardRenderState(designId, status, url, label) {
   const card = document.querySelector(`.design-card-compact[data-design-id="${designId}"]`);
   if (!card) return;
   const thumb  = card.querySelector('.dcc-thumb');
@@ -1699,7 +1708,7 @@ function updateCardRenderState(designId, status, url) {
     if (thumb) thumb.style.opacity = '.4';
     const b = document.createElement('div');
     b.className = 'dcc-render-badge';
-    b.innerHTML = '<span class="render-spinner"></span> Rendering…';
+    b.innerHTML = `<span class="render-spinner"></span> ${label || 'Rendering…'}`;
     wrap?.appendChild(b);
 
   } else if (status === 'idle') {
