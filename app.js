@@ -2022,6 +2022,7 @@ function goPhase3() {
   showPhase(3);
   renderDecisionPreview();
   renderAIInsights();
+  renderBOQ();
   updateCommitCard();
 }
 
@@ -2049,6 +2050,7 @@ function renderDecisionPreview() {
   updateP3WallOverlay();
   updateP3LightingOverlay();
   updateP3DesignBoard();
+  renderBOQ();
 }
 
 /* Wall colour: gradient that paints upper walls strongly, fades over furniture */
@@ -2199,6 +2201,227 @@ function renderAIInsights() {
     <div class="insight-card"><div class="insight-icon">📐</div><div class="insight-text">This layout <strong>improves space efficiency by 23%</strong> using furniture placement aligned to traffic flow.</div></div>
     <div class="insight-card"><div class="insight-icon">⏱</div><div class="insight-text">Estimated execution: <strong>${d.time}</strong>. ${state.constraints.has('rental') ? 'All items are rental-friendly and damage-free.' : 'All contractors available in your city.'}</div></div>
     ${state.constraints.has('vastu') ? `<div class="insight-card"><div class="insight-icon">🧭</div><div class="insight-text"><strong>Vastu compliant</strong>: seating faces east, main furniture avoids north-east quadrant.</div></div>` : ''}`;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BOQ ENGINE — city-specific pricing
+═══════════════════════════════════════════════════════════════ */
+const CITY_MULT = {
+  // Metros
+  'mumbai':1.45,'bombay':1.45,'navi mumbai':1.28,'thane':1.22,'kalyan':1.15,
+  'delhi':1.30,'new delhi':1.30,'noida':1.22,'gurugram':1.25,'gurgaon':1.25,'faridabad':1.12,'ghaziabad':1.12,
+  'bengaluru':1.0,'bangalore':1.0,'bengalore':1.0,
+  'hyderabad':1.05,'secunderabad':1.02,
+  'chennai':1.05,'madras':1.05,
+  'kolkata':0.98,'calcutta':0.98,
+  // Tier 1
+  'pune':1.10,'pimpri':1.05,
+  'ahmedabad':0.92,'surat':0.88,'vadodara':0.85,'baroda':0.85,
+  'kochi':0.95,'cochin':0.95,'thiruvananthapuram':0.88,'trivandrum':0.88,
+  'chandigarh':0.92,'mohali':0.90,'panchkula':0.90,
+  // Tier 2
+  'jaipur':0.82,'jodhpur':0.78,'udaipur':0.80,'ajmer':0.76,
+  'lucknow':0.80,'kanpur':0.75,'agra':0.75,'varanasi':0.74,'allahabad':0.73,'prayagraj':0.73,
+  'indore':0.80,'bhopal':0.78,'jabalpur':0.74,
+  'nagpur':0.85,'nashik':0.82,'aurangabad':0.78,
+  'ludhiana':0.85,'amritsar':0.82,'jalandhar':0.80,
+  'coimbatore':0.88,'madurai':0.82,'tiruchirappalli':0.80,
+  'visakhapatnam':0.85,'vijayawada':0.82,'guntur':0.78,'warangal':0.78,
+  'patna':0.75,'ranchi':0.74,'dhanbad':0.72,
+  'raipur':0.75,'bhubaneswar':0.80,'cuttack':0.75,
+  'guwahati':0.78,'shillong':0.75,
+  'dehradun':0.85,'haridwar':0.80,
+  'srinagar':0.80,'jammu':0.78,
+  'mysuru':0.88,'mysore':0.88,'mangaluru':0.90,'hubli':0.82,
+};
+
+const QUALITY_MULT = { 0:0.62, 1:1.0, 2:1.55, 3:2.50 };
+
+const BOQ_BASE = {
+  furniture: {
+    'sofa':           { label:'Sofa (3-seater)',            base:55000 },
+    'bed':            { label:'Bed with headboard (Queen)', base:38000 },
+    'wardrobe':       { label:'Wardrobe (6ft sliding)',     base:45000 },
+    'dining-table':   { label:'Dining table (6-seater)',    base:42000 },
+    'tv-unit':        { label:'TV unit',                    base:28000 },
+    'desk':           { label:'Study/work desk',            base:22000 },
+    'bookshelf':      { label:'Bookshelf',                  base:18000 },
+    'center-table':   { label:'Center/coffee table',        base:14000 },
+    'accent-chair':   { label:'Accent chair',               base:22000 },
+    'lounge-chair':   { label:'Lounge chair',               base:30000 },
+    'side-table':     { label:'Side table',                 base:8000  },
+    'dresser':        { label:'Dresser with mirror',        base:28000 },
+    'shoe-rack':      { label:'Shoe rack',                  base:7500  },
+    'storage':        { label:'Storage cabinet',            base:18000 },
+    'bean-bag':       { label:'Bean bag',                   base:6000  },
+    'pooja-unit':     { label:'Pooja unit',                 base:22000 },
+    'bar-cabinet':    { label:'Bar cabinet',                base:35000 },
+    'chest-of-drawers':{ label:'Chest of drawers',         base:20000 },
+    'display-cabinet':{ label:'Display cabinet',           base:28000 },
+  },
+  flooring: {
+    'teak-hardwood':  { label:'Teak hardwood flooring',     base:185, unit:'sqft' },
+    'oak-hardwood':   { label:'Oak hardwood flooring',      base:165, unit:'sqft' },
+    'marble':         { label:'Marble flooring',            base:225, unit:'sqft' },
+    'italian-marble': { label:'Italian marble flooring',    base:390, unit:'sqft' },
+    'vitrified-tiles':{ label:'Vitrified tile flooring',    base:88,  unit:'sqft' },
+    'laminate':       { label:'Laminate wood flooring',     base:98,  unit:'sqft' },
+    'cement':         { label:'Polished concrete floor',    base:72,  unit:'sqft' },
+    'bamboo':         { label:'Bamboo flooring',            base:135, unit:'sqft' },
+  },
+  wallFinish: {
+    'matte':          { label:'Premium matte paint',        base:38,  unit:'sqft' },
+    'textured':       { label:'Textured paint finish',      base:58,  unit:'sqft' },
+    'wallpaper':      { label:'Designer wallpaper',         base:125, unit:'sqft' },
+    'lime-wash':      { label:'Lime wash finish',           base:48,  unit:'sqft' },
+    'panelling':      { label:'Wall panelling',             base:290, unit:'sqft' },
+  },
+  ceiling: {
+    'plain':          { label:'Painted plain ceiling',      base:22,  unit:'sqft' },
+    'false-ceiling':  { label:'Gypsum false ceiling',       base:115, unit:'sqft' },
+    'coffered':       { label:'Coffered ceiling',           base:185, unit:'sqft' },
+    'wooden':         { label:'Wooden ceiling panels',      base:230, unit:'sqft' },
+  },
+  lighting: {
+    'recessed':       { label:'Recessed LED downlight',     base:2200 },
+    'pendant':        { label:'Pendant light',              base:8000 },
+    'chandelier':     { label:'Chandelier',                 base:28000 },
+    'track':          { label:'Track light point',          base:3500 },
+    'cove':           { label:'Cove lighting (per rft)',    base:280, unit:'rft' },
+  },
+};
+
+function getCityMult(cityStr) {
+  if (!cityStr) return 1.0;
+  const c = cityStr.toLowerCase().trim();
+  if (CITY_MULT[c]) return CITY_MULT[c];
+  for (const [k,v] of Object.entries(CITY_MULT)) {
+    if (c.includes(k) || k.includes(c)) return v;
+  }
+  return 0.88; // default: smaller city
+}
+
+function round100(n) { return Math.round(n / 100) * 100; }
+
+function generateBOQ() {
+  const d = state.selectedDesign || DESIGNS[0];
+  const cityMult = getCityMult(state.city);
+  const qualMult = QUALITY_MULT[state.budget?.tier ?? 1];
+  const L = state.dims?.length || 18;
+  const B = state.dims?.breadth || 14;
+  const H = state.dims?.height || 10;
+  const area = L * B;
+  const wallArea = 2 * (L + B) * H;
+  const P = (base) => round100(base * cityMult * qualMult);
+  const sections = [];
+
+  // 1. Furniture
+  const allFurn = [...new Set([...(state.furniture.existing||[]), ...(state.furniture.wanted||[])])];
+  const defaultFurn = { living:['sofa','center-table','tv-unit'], bedroom:['bed','wardrobe','side-table'], dining:['dining-table'], office:['desk','bookshelf'], kids:['bed','desk'], studio:['sofa','bed'] };
+  const furnList = allFurn.length ? allFurn : (defaultFurn[state.room] || defaultFurn.living);
+  const furnItems = furnList.map(k => {
+    const b = BOQ_BASE.furniture[k]; if (!b) return null;
+    const up = P(b.base);
+    return { label:b.label, qty:1, unit:'nos', unitPrice:up, total:up };
+  }).filter(Boolean);
+  if (furnItems.length) sections.push({ icon:'🪑', title:'Furniture', items:furnItems });
+
+  // 2. Flooring
+  const floorBp = BOQ_BASE.flooring[state.floor] || BOQ_BASE.flooring['teak-hardwood'];
+  sections.push({ icon:'🪵', title:'Flooring', items:[{
+    label: floorBp.label, qty: area, unit:'sqft', unitPrice: P(floorBp.base), total: round100(P(floorBp.base) * area)
+  }]});
+
+  // 3. Wall finish
+  const wallBp = BOQ_BASE.wallFinish[state.wallFinish] || BOQ_BASE.wallFinish['matte'];
+  const wallName = WALL_COLOR_NAMES?.[state.wallColor?.toUpperCase()] || 'Custom colour';
+  sections.push({ icon:'🎨', title:'Wall Finish', items:[{
+    label:`${wallBp.label} · ${wallName}`, qty: Math.round(wallArea), unit:'sqft', unitPrice: P(wallBp.base), total: round100(P(wallBp.base) * wallArea)
+  }]});
+
+  // 4. Ceiling
+  const ceilBp = BOQ_BASE.ceiling[state.ceiling] || BOQ_BASE.ceiling['plain'];
+  sections.push({ icon:'✦', title:'Ceiling', items:[{
+    label:ceilBp.label, qty:area, unit:'sqft', unitPrice:P(ceilBp.base), total:round100(P(ceilBp.base)*area)
+  }]});
+
+  // 5. Lighting
+  const lightCount = Math.max(4, Math.round(area / 28));
+  const lightBp = BOQ_BASE.lighting[state.lightingType] || BOQ_BASE.lighting['recessed'];
+  const lightItems = [{ label:lightBp.label, qty:lightCount, unit:'nos', unitPrice:P(lightBp.base), total:round100(P(lightBp.base)*lightCount) }];
+  if (state.budget?.tier >= 2) lightItems.push({ label:'Statement pendant / chandelier', qty:1, unit:'nos', unitPrice:P(15000), total:P(15000) });
+  const covePerim = 2*(L+B);
+  lightItems.push({ label:'Cove LED strip lighting', qty:covePerim, unit:'rft', unitPrice:P(280), total:round100(P(280)*covePerim) });
+  sections.push({ icon:'💡', title:'Lighting', items:lightItems });
+
+  // 6. Soft furnishings
+  const softItems = [];
+  if (state.curtain?.material) softItems.push({ label:`Curtains · ${state.curtain.style||'panel'} · ${state.curtain.material}`, qty:2, unit:'panels', unitPrice:P(9000), total:P(9000)*2 });
+  if (state.rug?.material) softItems.push({ label:`Area rug · ${state.rug.material}`, qty:1, unit:'nos', unitPrice:P(15000), total:P(15000) });
+  if (softItems.length) sections.push({ icon:'🪟', title:'Soft Furnishings', items:softItems });
+
+  // 7. MEP
+  const elecPoints = Math.max(8, Math.round(area/22));
+  const fanCount = Math.ceil(area/130);
+  const mepItems = [
+    { label:'Modular electrical switches & sockets', qty:elecPoints, unit:'nos', unitPrice:P(1200), total:round100(P(1200)*elecPoints) },
+    { label:'Ceiling fan point (wiring)', qty:fanCount, unit:'nos', unitPrice:P(1500), total:round100(P(1500)*fanCount) },
+  ];
+  if (['living','bedroom','office','workoffice'].includes(state.room)) {
+    mepItems.push({ label:'AC point (wiring + drainage)', qty:1, unit:'nos', unitPrice:P(4800), total:P(4800) });
+  }
+  if (['kitchen','bathroom'].includes(state.room)) {
+    mepItems.push({ label:'Plumbing points', qty:4, unit:'nos', unitPrice:P(3500), total:round100(P(3500)*4) });
+  }
+  sections.push({ icon:'⚡', title:'MEP (Electrical / Plumbing)', items:mepItems });
+
+  // Subtotal
+  const subtotal = sections.reduce((s,sec)=>s+sec.items.reduce((ss,i)=>ss+i.total,0),0);
+  const carpentry = round100(subtotal * 0.12);
+  const designFee = round100(subtotal * 0.10);
+  sections.push({ icon:'🔨', title:'Labor & Professional Fees', items:[
+    { label:'Carpentry & site installation', qty:1, unit:'lumpsum', unitPrice:carpentry, total:carpentry },
+    { label:'Interior designer fee (10%)', qty:1, unit:'lumpsum', unitPrice:designFee, total:designFee },
+  ]});
+
+  const grandTotal = subtotal + carpentry + designFee;
+  const cityLabel = state.city ? state.city.charAt(0).toUpperCase()+state.city.slice(1) : 'Your city';
+  return { sections, subtotal, grandTotal, cityLabel, cityMult, area };
+}
+
+function renderBOQ() {
+  const el = document.getElementById('boqContainer');
+  if (!el) return;
+  const { sections, subtotal, grandTotal, cityLabel, cityMult, area } = generateBOQ();
+  const cityTag = cityMult >= 1.3 ? '🔴 High cost city' : cityMult >= 1.0 ? '🟡 Moderate cost city' : '🟢 Affordable city';
+
+  el.innerHTML = `
+    <div class="boq-header">
+      <div class="boq-title">📋 Bill of Quantities</div>
+      <div class="boq-meta">${cityLabel} · ${area} sqft · ${state.budget?.label || 'Mid-Range'} quality <span class="boq-city-tag">${cityTag}</span></div>
+    </div>
+    ${sections.map(sec => `
+      <div class="boq-section">
+        <div class="boq-sec-title">${sec.icon} ${sec.title}</div>
+        <table class="boq-table">
+          <thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th>Rate</th><th>Amount</th></tr></thead>
+          <tbody>
+            ${sec.items.map(i=>`<tr>
+              <td>${i.label}</td>
+              <td>${typeof i.qty==='number'&&i.qty%1!==0?i.qty.toFixed(0):i.qty}</td>
+              <td>${i.unit}</td>
+              <td>${formatINR(i.unitPrice)}</td>
+              <td class="boq-amount">${formatINR(i.total)}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    `).join('')}
+    <div class="boq-totals">
+      <div class="boq-subtotal"><span>Subtotal</span><span>${formatINR(subtotal)}</span></div>
+      <div class="boq-grand"><span>Total Estimated Cost</span><span>${formatINR(grandTotal)}</span></div>
+      <div class="boq-disclaimer">* Prices based on ${cityLabel} market rates. Actual costs may vary ±15% based on brand, contractor, and material availability.</div>
+    </div>`;
 }
 
 function updateCommitCard() {

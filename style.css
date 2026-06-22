@@ -416,6 +416,26 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); background-image
 .insight-card { display: flex; align-items: flex-start; gap: .65rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: .75rem 1rem; font-size: .82rem; line-height: 1.5; }
 .insight-icon { font-size: 1rem; flex-shrink: 0; margin-top: .05rem; }
 .insight-text { color: var(--muted2); }
+
+/* ── BOQ ────────────────────────────────────────────────────── */
+.boq-wrap { margin-top: 1.5rem; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; font-size: .8rem; }
+.boq-header { background: var(--surface); padding: 1rem 1.2rem .8rem; border-bottom: 1px solid var(--border); }
+.boq-title { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: .25rem; }
+.boq-meta { font-size: .75rem; color: var(--muted); display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.boq-city-tag { font-size: .68rem; font-weight: 600; padding: .15rem .5rem; border-radius: 100px; background: rgba(201,146,58,.15); color: var(--accent); }
+.boq-section { border-bottom: 1px solid var(--border); }
+.boq-sec-title { padding: .6rem 1.2rem; font-weight: 600; font-size: .78rem; letter-spacing: .04em; background: rgba(201,146,58,.05); color: var(--text); }
+.boq-table { width: 100%; border-collapse: collapse; }
+.boq-table th { padding: .35rem .8rem; text-align: left; font-size: .7rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid var(--border); }
+.boq-table td { padding: .45rem .8rem; color: var(--muted2); border-bottom: 1px solid rgba(0,0,0,.04); vertical-align: top; }
+.boq-table tr:last-child td { border-bottom: none; }
+.boq-table td:nth-child(4), .boq-table td:nth-child(5) { text-align: right; white-space: nowrap; }
+.boq-table th:nth-child(4), .boq-table th:nth-child(5) { text-align: right; }
+.boq-amount { font-weight: 600; color: var(--text) !important; }
+.boq-totals { padding: 1rem 1.2rem; background: var(--surface); }
+.boq-subtotal { display: flex; justify-content: space-between; padding: .4rem 0; color: var(--muted2); font-size: .82rem; border-top: 1px solid var(--border); }
+.boq-grand { display: flex; justify-content: space-between; padding: .6rem 0 .4rem; font-size: 1.05rem; font-weight: 700; color: var(--text); border-top: 2px solid var(--border); }
+.boq-disclaimer { font-size: .68rem; color: var(--muted); margin-top: .5rem; line-height: 1.5; }
 .insight-text strong { color: var(--text); }
 
 .decision-controls { display: flex; flex-direction: column; gap: 1.25rem; }
