@@ -1666,12 +1666,16 @@ async function renderOneDesign(designId) {
 
     // Otherwise poll until done
     const url = await pollPrediction(result.id, (data) => {
-      const label = data.status === 'starting'
-        ? `Warming up AI${data.elapsed ? ` · ${data.elapsed}s` : ''}…`
-        : data.status === 'processing'
-        ? `Rendering${data.elapsed ? ` · ${data.elapsed}s` : ''}…`
-        : null;
-      updateCardRenderState(d.id, data.status === 'starting' ? 'loading' : 'processing', null, label);
+      const isStarting = data.status === 'starting';
+      const label = isStarting
+        ? `Warming up AI model${data.elapsed ? ` · ${data.elapsed}s` : ''}…`
+        : `Rendering${data.elapsed ? ` · ${data.elapsed}s` : ''}…`;
+      updateCardRenderState(d.id, isStarting ? 'loading' : 'processing', null, label);
+      // Update large preview overlay text
+      const overlaySpan = document.querySelector('#p2RenderOverlay span:last-child');
+      if (overlaySpan) overlaySpan.textContent = isStarting ? `Warming up · ${data.elapsed || 0}s` : `Rendering · ${data.elapsed || 0}s`;
+      const statusEl = document.getElementById('p2RenderStatus');
+      if (statusEl) statusEl.innerHTML = `<span class="render-spinner"></span> ${label}`;
     });
     aiRenders[d.id] = { status: 'done', url };
     updateCardRenderState(d.id, 'done', url);
