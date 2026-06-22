@@ -141,7 +141,7 @@ exports.handler = async (event) => {
               image: imageBase64,
               prompt: fullPrompt,
               negative_prompt: NEGATIVE_PROMPT,
-              image_strength: 0.45,
+              image_strength: 0.35,
               num_inference_steps: 30,
               guidance_scale: 8,
               width: 1024,
