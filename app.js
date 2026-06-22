@@ -657,7 +657,6 @@ function applyRoomAnalysis(data) {
     data.existingFurniture.forEach(item => {
       document.querySelectorAll(`.furn-chip[data-item="${item}"]`).forEach(c => c.classList.add('selected'));
     });
-    renderFurnitureChips();
   }
   // Suggest style if user hasn't picked one
   if (data.currentStyle && data.currentStyle !== 'none' && !state.style.length) {
