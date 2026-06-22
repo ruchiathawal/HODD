@@ -1637,6 +1637,31 @@ function updateCardRenderState(designId, status, url) {
 }
 
 function p2ShowRenderLoading(design) {
+  // If user uploaded their room, show it immediately as the base image
+  if (state.referencePhoto) {
+    const imgA = document.getElementById('p2ImgA');
+    const imgB = document.getElementById('p2ImgB');
+    const active = _p2ActiveImgSlot === 'a' ? imgA : imgB;
+    if (active && !active.src) {
+      active.src = state.referencePhoto;
+    }
+    // Add a semi-transparent overlay showing it's being restyled
+    let overlay = document.getElementById('p2RenderOverlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'p2RenderOverlay';
+      overlay.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6rem;border-radius:inherit;z-index:2;';
+      overlay.innerHTML = `
+        <span class="render-spinner" style="width:2rem;height:2rem;border-width:3px"></span>
+        <span style="color:#fff;font-size:.85rem;font-weight:600;text-align:center;padding:0 1rem">
+          Restyling your room in<br><em>${design.name}</em>
+        </span>
+        <span style="color:rgba(255,255,255,.6);font-size:.72rem">Preserving your layout & dimensions</span>`;
+      const wrap = imgA?.parentNode;
+      if (wrap) wrap.style.position = 'relative', wrap.appendChild(overlay);
+    }
+  }
+
   const name = document.getElementById('p2OvName');
   if (name && design) {
     const existing = document.getElementById('p2RenderStatus');
@@ -1653,8 +1678,9 @@ function p2ShowRenderLoading(design) {
 }
 
 function p2UpdatePreviewImage(url, design) {
-  // Remove render status
+  // Remove render status and overlay
   document.getElementById('p2RenderStatus')?.remove();
+  document.getElementById('p2RenderOverlay')?.remove();
   // Add "Your room" badge
   const topTag = document.getElementById('p2TopTag');
   if (topTag) topTag.innerHTML = `<span class="d-badge badge-ai" style="background:rgba(58,138,80,.9)">✦ Your actual room</span>`;
