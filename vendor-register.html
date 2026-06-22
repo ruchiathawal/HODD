@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>List Your Business — HODD Vendor Partner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet" />
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #faf7f2; --surface: #f5f0e8; --surface2: #ede8df;
+      --border: rgba(180,150,100,.18); --border2: rgba(180,150,100,.32);
+      --accent: #c9923a; --text: #1e1208; --muted: #7a6a58; --muted2: #5a4e3c;
+      --success: #3a8a50; --radius: 14px; --radius-sm: 8px;
+    }
+    body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+    .topbar { display:flex; align-items:center; gap:1rem; padding:.9rem 2rem; background:rgba(250,247,242,.95); border-bottom:1px solid var(--border); position:sticky; top:0; backdrop-filter:blur(16px); z-index:100; }
+    .logo { font-family:'Playfair Display',serif; font-size:1.3rem; font-weight:700; }
+    .logo span { color:var(--accent); }
+    .back-link { margin-left:auto; font-size:.82rem; color:var(--muted); text-decoration:none; border:1px solid var(--border2); padding:.3rem .8rem; border-radius:100px; }
+    .back-link:hover { color:var(--accent); border-color:var(--accent); }
+
+    .hero { text-align:center; padding:3.5rem 2rem 2rem; }
+    .hero-badge { display:inline-block; background:rgba(201,146,58,.12); color:var(--accent); font-size:.72rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; padding:.35rem 1rem; border-radius:100px; border:1px solid rgba(201,146,58,.3); margin-bottom:1.2rem; }
+    .hero h1 { font-family:'Playfair Display',serif; font-size:2.2rem; font-weight:700; line-height:1.25; margin-bottom:.75rem; }
+    .hero p { color:var(--muted); font-size:.95rem; max-width:480px; margin:0 auto 1.5rem; line-height:1.6; }
+
+    .perks { display:flex; justify-content:center; gap:2rem; flex-wrap:wrap; margin-bottom:2.5rem; }
+    .perk { text-align:center; font-size:.8rem; color:var(--muted2); }
+    .perk-icon { font-size:1.4rem; margin-bottom:.3rem; }
+    .perk strong { display:block; color:var(--text); font-weight:600; font-size:.82rem; margin-bottom:.1rem; }
+
+    .form-wrap { max-width:600px; margin:0 auto; padding:0 1.5rem 4rem; }
+
+    .form-section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1.5rem; margin-bottom:1.2rem; }
+    .form-section-title { font-size:.72rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:1.2rem; }
+
+    label { display:block; font-size:.82rem; font-weight:600; color:var(--muted2); margin-bottom:.35rem; }
+    input[type=text], input[type=email], input[type=tel], input[type=url], select, textarea {
+      width:100%; background:var(--bg); border:1px solid var(--border2); color:var(--text);
+      font-size:.88rem; padding:.65rem .9rem; border-radius:var(--radius-sm); outline:none;
+      font-family:inherit; margin-bottom:1rem; transition:border-color .2s;
+    }
+    input:focus, select:focus, textarea:focus { border-color:var(--accent); }
+    textarea { resize:vertical; min-height:80px; }
+
+    .field-row { display:grid; grid-template-columns:1fr 1fr; gap:.8rem; }
+    @media(max-width:520px){ .field-row { grid-template-columns:1fr; } }
+
+    .hint { font-size:.72rem; color:var(--muted); margin-top:-.75rem; margin-bottom:1rem; }
+
+    .check-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:.5rem; }
+    .check-item { display:flex; align-items:center; gap:.5rem; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm); padding:.55rem .75rem; cursor:pointer; transition:.2s; }
+    .check-item:hover { border-color:var(--accent); }
+    .check-item input[type=checkbox] { width:15px; height:15px; accent-color:var(--accent); cursor:pointer; margin-bottom:0; }
+    .check-item span { font-size:.82rem; color:var(--muted2); }
+
+    .city-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:.4rem; }
+    @media(max-width:420px){ .city-grid { grid-template-columns:repeat(2,1fr); } }
+    .city-item { display:flex; align-items:center; gap:.4rem; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm); padding:.4rem .6rem; cursor:pointer; font-size:.75rem; color:var(--muted2); transition:.2s; }
+    .city-item:hover { border-color:var(--accent); color:var(--text); }
+    .city-item input[type=checkbox] { width:13px; height:13px; accent-color:var(--accent); cursor:pointer; margin-bottom:0; }
+
+    .commission-box { background:rgba(201,146,58,.07); border:1px solid rgba(201,146,58,.25); border-radius:var(--radius-sm); padding:1rem 1.2rem; }
+    .commission-box p { font-size:.82rem; color:var(--muted2); line-height:1.6; }
+    .commission-box strong { color:var(--text); }
+
+    .submit-btn { width:100%; background:var(--accent); color:#fff; border:none; border-radius:var(--radius); padding:.9rem 1rem; font-size:.95rem; font-weight:700; cursor:pointer; margin-top:.5rem; transition:.2s; }
+    .submit-btn:hover { background:#b07828; }
+    .submit-btn:disabled { opacity:.5; cursor:not-allowed; }
+
+    #formError { color:#dc2626; font-size:.8rem; margin-top:.5rem; text-align:center; display:none; }
+
+    .success-screen { max-width:480px; margin:4rem auto; text-align:center; padding:2.5rem 2rem; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); display:none; }
+    .success-icon { font-size:3rem; margin-bottom:1rem; }
+    .success-screen h2 { font-family:'Playfair Display',serif; font-size:1.6rem; margin-bottom:.75rem; }
+    .success-screen p { color:var(--muted); font-size:.88rem; line-height:1.6; margin-bottom:1.5rem; }
+    .success-whatsapp { display:inline-flex; align-items:center; gap:.5rem; background:#25d366; color:#fff; text-decoration:none; border-radius:100px; padding:.6rem 1.4rem; font-size:.85rem; font-weight:700; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">HODD<span>.</span></div>
+  <a href="index.html" class="back-link">← Back to App</a>
+</div>
+
+<div class="hero">
+  <div class="hero-badge">Vendor Partner Programme</div>
+  <h1>Reach homeowners<br>who are ready to buy</h1>
+  <p>HODD shows your business to users actively designing their home — at exactly the moment they need what you sell.</p>
+  <div class="perks">
+    <div class="perk"><div class="perk-icon">🏙️</div><strong>City-matched</strong>Your listing appears to users in your city</div>
+    <div class="perk"><div class="perk-icon">💰</div><strong>Pay per sale</strong>No upfront fee — 8% commission on referrals only</div>
+    <div class="perk"><div class="perk-icon">📲</div><strong>Direct contact</strong>Customers reach you on WhatsApp instantly</div>
+  </div>
+</div>
+
+<div class="form-wrap">
+
+  <!-- Business Info -->
+  <div class="form-section">
+    <div class="form-section-title">Business Details</div>
+    <div class="field-row">
+      <div><label>Business Name *</label><input type="text" id="businessName" placeholder="e.g. Sharma Furniture House" /></div>
+      <div><label>Owner / Contact Name *</label><input type="text" id="ownerName" placeholder="Your name" /></div>
+    </div>
+    <div class="field-row">
+      <div><label>WhatsApp Number *</label><input type="tel" id="whatsapp" placeholder="9876543210" maxlength="10" /></div>
+      <div><label>Phone (calls)</label><input type="tel" id="phone" placeholder="9876543210" maxlength="10" /></div>
+    </div>
+    <label>Email Address *</label>
+    <input type="email" id="email" placeholder="you@business.com" />
+    <label>Years in Business</label>
+    <select id="yearsInBusiness">
+      <option value="">Select…</option>
+      <option>Less than 1 year</option>
+      <option>1–3 years</option>
+      <option>3–5 years</option>
+      <option>5–10 years</option>
+      <option>10+ years</option>
+    </select>
+  </div>
+
+  <!-- Categories -->
+  <div class="form-section">
+    <div class="form-section-title">What Do You Sell? (select all that apply) *</div>
+    <div class="check-grid">
+      <label class="check-item"><input type="checkbox" value="furniture" /><span>🪑 Furniture</span></label>
+      <label class="check-item"><input type="checkbox" value="flooring" /><span>🪵 Flooring</span></label>
+      <label class="check-item"><input type="checkbox" value="wall-finish" /><span>🎨 Paints & Wall Finish</span></label>
+      <label class="check-item"><input type="checkbox" value="ceiling" /><span>✦ False Ceiling</span></label>
+      <label class="check-item"><input type="checkbox" value="lighting" /><span>💡 Lighting & Fans</span></label>
+      <label class="check-item"><input type="checkbox" value="soft-furnishings" /><span>🪟 Curtains & Rugs</span></label>
+      <label class="check-item"><input type="checkbox" value="mep" /><span>⚡ Electrical / Plumbing</span></label>
+      <label class="check-item"><input type="checkbox" value="labor" /><span>🔨 Interior Contractors</span></label>
+    </div>
+  </div>
+
+  <!-- Cities -->
+  <div class="form-section">
+    <div class="form-section-title">Cities You Serve *</div>
+    <div class="city-grid" id="cityGrid">
+      <!-- injected by JS -->
+    </div>
+  </div>
+
+  <!-- Online Presence -->
+  <div class="form-section">
+    <div class="form-section-title">Online Presence (at least one)</div>
+    <label>IndiaMART Profile URL</label>
+    <input type="url" id="indiaMartUrl" placeholder="https://www.indiamart.com/your-company/" />
+    <label>JustDial Profile URL</label>
+    <input type="url" id="justDialUrl" placeholder="https://www.justdial.com/..." />
+    <label>Website / Instagram / Google Maps Link</label>
+    <input type="url" id="websiteUrl" placeholder="https://..." />
+    <label>Short Description</label>
+    <textarea id="description" placeholder="Tell homeowners what makes your business special (50–150 words)…"></textarea>
+  </div>
+
+  <!-- Commission agreement -->
+  <div class="form-section">
+    <div class="form-section-title">Commission Agreement</div>
+    <div class="commission-box">
+      <p><strong>8% commission on every sale referred from HODD.</strong><br><br>
+      When a homeowner contacts you through HODD and makes a purchase, you inform our team via WhatsApp. We verify the referral and send a monthly invoice. No upfront cost, no listing fee — you pay only when you earn.</p>
+    </div>
+    <br>
+    <label class="check-item" style="margin-top:.5rem"><input type="checkbox" id="agreeCommission" /><span>I agree to the 8% commission terms</span></label>
+  </div>
+
+  <button class="submit-btn" id="submitBtn" onclick="submitVendor()">Submit Application →</button>
+  <div id="formError"></div>
+</div>
+
+<!-- Success screen -->
+<div class="success-screen" id="successScreen">
+  <div class="success-icon">🎉</div>
+  <h2>Application Submitted!</h2>
+  <p>We'll review your details and list your business on HODD within <strong>24 hours</strong>. Once verified, homeowners in your city will see your profile in their design estimates.</p>
+  <p style="margin-bottom:1.5rem">Meanwhile, save our WhatsApp number to report sales and receive commission invoices.</p>
+  <a href="https://wa.me/917760202020?text=Hi%2C+I%20just%20registered%20as%20a%20HODD%20vendor" target="_blank" class="success-whatsapp">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    Message HODD Team
+  </a>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey:            "AIzaSyCBTPvcIiu9r3fvwph_K-xdCWmrRZVtn3g",
+  authDomain:        "hodd-7f6de.firebaseapp.com",
+  projectId:         "hodd-7f6de",
+  storageBucket:     "hodd-7f6de.firebasestorage.app",
+  messagingSenderId: "151430626519",
+  appId:             "1:151430626519:web:fa7cc9e84bc3ae837f4492",
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+db.settings({ experimentalForceLongPolling: true, merge: true });
+
+const CITIES = [
+  'Mumbai','Delhi','Bengaluru','Hyderabad','Chennai','Pune','Kolkata',
+  'Ahmedabad','Jaipur','Lucknow','Surat','Chandigarh','Bhopal','Nagpur',
+  'Indore','Coimbatore','Kochi','Vadodara','Nashik','Agra','Patna',
+  'Visakhapatnam','Gurgaon','Noida','Thane','Navi Mumbai','Mysuru',
+  'Rajkot','Ludhiana','Bhubaneswar',
+];
+
+// Render city checkboxes
+document.getElementById('cityGrid').innerHTML = CITIES.map(c =>
+  `<label class="city-item"><input type="checkbox" value="${c.toLowerCase()}" /><span>${c}</span></label>`
+).join('');
+
+function getCheckedValues(selector) {
+  return [...document.querySelectorAll(selector)].filter(el => el.checked).map(el => el.value);
+}
+
+function showError(msg) {
+  const el = document.getElementById('formError');
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 4000);
+}
+
+async function submitVendor() {
+  const btn = document.getElementById('submitBtn');
+  const businessName = document.getElementById('businessName').value.trim();
+  const ownerName    = document.getElementById('ownerName').value.trim();
+  const whatsapp     = document.getElementById('whatsapp').value.trim();
+  const email        = document.getElementById('email').value.trim();
+  const categories   = getCheckedValues('.check-grid input[type=checkbox]');
+  const cities       = getCheckedValues('#cityGrid input[type=checkbox]');
+  const agreed       = document.getElementById('agreeCommission').checked;
+  const indiaMartUrl = document.getElementById('indiaMartUrl').value.trim();
+  const justDialUrl  = document.getElementById('justDialUrl').value.trim();
+  const websiteUrl   = document.getElementById('websiteUrl').value.trim();
+  const description  = document.getElementById('description').value.trim();
+
+  if (!businessName) return showError('Please enter your business name.');
+  if (!ownerName) return showError('Please enter the contact name.');
+  if (!whatsapp || whatsapp.length < 10) return showError('Please enter a valid WhatsApp number.');
+  if (!email || !email.includes('@')) return showError('Please enter a valid email address.');
+  if (!categories.length) return showError('Please select at least one category.');
+  if (!cities.length) return showError('Please select at least one city.');
+  if (!indiaMartUrl && !justDialUrl && !websiteUrl) return showError('Please add at least one online profile link.');
+  if (!agreed) return showError('Please agree to the commission terms.');
+
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
+
+  try {
+    await db.collection('vendors').add({
+      businessName,
+      ownerName,
+      whatsapp,
+      phone: document.getElementById('phone').value.trim(),
+      email,
+      yearsInBusiness: document.getElementById('yearsInBusiness').value,
+      categories,
+      cities,
+      indiaMartUrl,
+      justDialUrl,
+      websiteUrl,
+      description,
+      commissionRate: 8,
+      verified: false,
+      clicks: 0,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    document.querySelector('.form-wrap').style.display = 'none';
+    document.querySelector('.hero').style.display = 'none';
+    document.getElementById('successScreen').style.display = 'block';
+  } catch(err) {
+    btn.disabled = false;
+    btn.textContent = 'Submit Application →';
+    showError('Something went wrong. Please try again.');
+    console.error(err);
+  }
+}
+</script>
+</body>
+</html>

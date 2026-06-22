@@ -442,6 +442,16 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); background-image
 .boq-vendor-link:hover { background: rgba(201,146,58,.12); }
 .boq-share-btn { display: flex; align-items: center; gap: .5rem; margin-top: .9rem; width: 100%; justify-content: center; padding: .75rem 1rem; background: #25d366; color: #fff; border: none; border-radius: var(--radius); font-size: .85rem; font-weight: 700; cursor: pointer; letter-spacing: .02em; }
 .boq-share-btn:hover { background: #1ebe5d; }
+.boq-hodd-vendors:empty { display: none; }
+.boq-vendor-card { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .7rem 1.2rem; border-top: 1px solid var(--border); background: rgba(201,146,58,.04); flex-wrap: wrap; }
+.boq-vc-info { flex: 1; min-width: 0; }
+.boq-vc-name { font-size: .82rem; font-weight: 700; color: var(--text); }
+.boq-vc-meta { font-size: .72rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.boq-vc-actions { display: flex; gap: .5rem; align-items: center; flex-shrink: 0; }
+.boq-vc-wa { display: inline-flex; align-items: center; gap: .35rem; background: #25d366; color: #fff; text-decoration: none; border-radius: 100px; padding: .3rem .8rem; font-size: .75rem; font-weight: 700; }
+.boq-vc-catalog { font-size: .75rem; color: var(--accent); font-weight: 600; text-decoration: none; border: 1px solid rgba(201,146,58,.35); padding: .3rem .7rem; border-radius: 100px; }
+.boq-vc-catalog:hover { background: rgba(201,146,58,.1); }
+.boq-hodd-label { font-size: .65rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); padding: .4rem 1.2rem .1rem; }
 .insight-text strong { color: var(--text); }
 
 .decision-controls { display: flex; flex-direction: column; gap: 1.25rem; }

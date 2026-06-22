@@ -68,6 +68,12 @@
     .refresh-btn { background:var(--surface2); border:1px solid var(--border2); color:var(--muted2); font-size:.78rem; font-weight:600; padding:.4rem 1rem; border-radius:100px; cursor:pointer; margin-left:auto; display:block; margin-bottom:.75rem; }
     .refresh-btn:hover { border-color:var(--accent); color:var(--accent); }
     @media(max-width:600px){ .container { padding:1.5rem 1rem 3rem; } .stats-row { grid-template-columns:repeat(2,1fr); } }
+    .tab-btn { background:none; border:1px solid var(--border2); color:var(--muted2); font-size:.78rem; font-weight:600; padding:.4rem 1.1rem; border-radius:100px; cursor:pointer; }
+    .tab-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .tag-pending { background:rgba(220,150,0,.12); color:#a06000; font-size:.65rem; font-weight:600; padding:.2rem .5rem; border-radius:100px; }
+    .tag-verified { background:rgba(58,138,80,.12); color:var(--success); font-size:.65rem; font-weight:600; padding:.2rem .5rem; border-radius:100px; }
+    .btn-verify { background:rgba(58,138,80,.15); border:1px solid var(--success); color:var(--success); font-size:.72rem; font-weight:600; padding:.25rem .7rem; border-radius:100px; cursor:pointer; }
+    .btn-reject { background:rgba(220,38,38,.08); border:1px solid #dc2626; color:#dc2626; font-size:.72rem; font-weight:600; padding:.25rem .7rem; border-radius:100px; cursor:pointer; margin-left:.3rem; }
   </style>
 </head>
 <body>
@@ -107,16 +113,40 @@
       <div class="stat-card"><div class="stat-label">Cities</div><div class="stat-val" id="statCities">—</div><div class="stat-sub">Unique cities</div></div>
     </div>
 
-    <!-- Users table -->
-    <div style="display:flex;align-items:center;margin-bottom:.75rem;">
-      <div class="section-title">All Users</div>
-      <button class="refresh-btn" onclick="loadDashboard()">↻ Refresh</button>
+    <!-- Tab nav -->
+    <div style="display:flex;gap:.5rem;margin-bottom:1.5rem;border-bottom:1px solid var(--border);padding-bottom:.75rem;">
+      <button class="tab-btn active" id="tab-users" onclick="switchTab('users')">Users</button>
+      <button class="tab-btn" id="tab-vendors" onclick="switchTab('vendors')">Vendors</button>
     </div>
-    <div class="table-wrap">
-      <div id="usersTableWrap">
-        <div class="loading"><div class="spinner"></div>Loading users…</div>
+
+    <!-- Users tab -->
+    <div id="pane-users">
+      <div style="display:flex;align-items:center;margin-bottom:.75rem;">
+        <div class="section-title">All Users</div>
+        <button class="refresh-btn" onclick="loadDashboard()">↻ Refresh</button>
+      </div>
+      <div class="table-wrap">
+        <div id="usersTableWrap">
+          <div class="loading"><div class="spinner"></div>Loading users…</div>
+        </div>
       </div>
     </div>
+
+    <!-- Vendors tab -->
+    <div id="pane-vendors" style="display:none">
+      <div style="display:flex;align-items:center;margin-bottom:.75rem;gap:1rem;">
+        <div class="section-title">Vendor Applications</div>
+        <button class="refresh-btn" onclick="loadVendors()">↻ Refresh</button>
+        <a href="vendor-register.html" target="_blank" style="font-size:.75rem;color:var(--accent);text-decoration:none;border:1px solid var(--accent);padding:.3rem .75rem;border-radius:100px;">+ Vendor Signup Page ↗</a>
+      </div>
+      <div id="vendorStats" style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;"></div>
+      <div class="table-wrap">
+        <div id="vendorsTableWrap">
+          <div class="loading"><div class="spinner"></div>Loading vendors…</div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -175,6 +205,89 @@ function showErr(msg) {
 
 function adminSignOut() {
   auth.signOut();
+}
+
+function switchTab(tab) {
+  document.getElementById('pane-users').style.display   = tab === 'users'   ? 'block' : 'none';
+  document.getElementById('pane-vendors').style.display = tab === 'vendors' ? 'block' : 'none';
+  document.getElementById('tab-users').classList.toggle('active',   tab === 'users');
+  document.getElementById('tab-vendors').classList.toggle('active', tab === 'vendors');
+  if (tab === 'vendors') loadVendors();
+}
+
+async function loadVendors() {
+  document.getElementById('vendorsTableWrap').innerHTML = '<div class="loading"><div class="spinner"></div>Loading vendors…</div>';
+  try {
+    const snap = await db.collection('vendors').get();
+    const vendors = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    vendors.sort((a,b) => (b.createdAt?.toMillis?.()||0) - (a.createdAt?.toMillis?.()||0));
+
+    // Click stats
+    const clickSnap = await db.collection('vendor_clicks').get();
+    const clicks = {};
+    clickSnap.docs.forEach(d => {
+      const { vendorId, type } = d.data();
+      if (!clicks[vendorId]) clicks[vendorId] = { total:0, whatsapp:0, catalog:0 };
+      clicks[vendorId].total++;
+      if (type === 'whatsapp') clicks[vendorId].whatsapp++;
+      else clicks[vendorId].catalog++;
+    });
+
+    const pending  = vendors.filter(v => !v.verified).length;
+    const verified = vendors.filter(v =>  v.verified).length;
+    const totalClicks = Object.values(clicks).reduce((s,c)=>s+c.total,0);
+    document.getElementById('vendorStats').innerHTML = `
+      <div class="stat-card"><div class="stat-label">Total Vendors</div><div class="stat-val">${vendors.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Pending</div><div class="stat-val" style="color:#a06000">${pending}</div></div>
+      <div class="stat-card"><div class="stat-label">Verified</div><div class="stat-val" style="color:var(--success)">${verified}</div></div>
+      <div class="stat-card"><div class="stat-label">Total Clicks</div><div class="stat-val">${totalClicks}</div><div class="stat-sub">Commission evidence</div></div>`;
+
+    if (!vendors.length) {
+      document.getElementById('vendorsTableWrap').innerHTML = '<div class="empty-state">No vendor applications yet. Share the <a href="vendor-register.html" target="_blank" style="color:var(--accent)">vendor signup link</a> to get started.</div>';
+      return;
+    }
+
+    const rows = vendors.map(v => {
+      const vc = clicks[v.id] || { total:0, whatsapp:0, catalog:0 };
+      const ts = v.createdAt?.toDate ? v.createdAt.toDate().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) : '—';
+      const badge = v.verified ? '<span class="tag-verified">Verified</span>' : '<span class="tag-pending">Pending</span>';
+      const cats = (v.categories||[]).join(', ');
+      const cities = (v.cities||[]).slice(0,3).join(', ') + ((v.cities||[]).length > 3 ? ` +${v.cities.length-3}` : '');
+      const links = [v.indiaMartUrl&&'<a href="'+v.indiaMartUrl+'" target="_blank" style="color:var(--accent);font-size:.72rem">IM</a>',
+                     v.justDialUrl &&'<a href="'+v.justDialUrl+'"  target="_blank" style="color:var(--accent);font-size:.72rem">JD</a>',
+                     v.websiteUrl  &&'<a href="'+v.websiteUrl+'"   target="_blank" style="color:var(--accent);font-size:.72rem">Web</a>'].filter(Boolean).join(' ');
+      const verifyBtn = !v.verified
+        ? `<button class="btn-verify" onclick="setVendorStatus('${v.id}',true)">✓ Verify</button>`
+        : `<button class="btn-reject" onclick="setVendorStatus('${v.id}',false)">✕ Remove</button>`;
+      return `<tr>
+        <td>${badge}</td>
+        <td><strong style="font-size:.84rem">${v.businessName||'—'}</strong><br><span style="font-size:.72rem;color:var(--muted)">${v.ownerName||''}</span></td>
+        <td><a href="https://wa.me/91${v.whatsapp}" target="_blank" style="color:var(--accent);font-size:.82rem">+91 ${v.whatsapp}</a></td>
+        <td style="font-size:.75rem;color:var(--muted2)">${cats}</td>
+        <td style="font-size:.75rem;color:var(--muted2)">${cities}</td>
+        <td style="text-align:center"><strong>${vc.total}</strong><span style="font-size:.68rem;color:var(--muted);display:block">${vc.whatsapp}wa · ${vc.catalog}cat</span></td>
+        <td>${links}</td>
+        <td style="font-size:.72rem;color:var(--muted)">${ts}</td>
+        <td>${verifyBtn}</td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('vendorsTableWrap').innerHTML = `
+      <table style="min-width:900px">
+        <thead><tr><th>Status</th><th>Business</th><th>WhatsApp</th><th>Categories</th><th>Cities</th><th style="text-align:center">Clicks</th><th>Links</th><th>Applied</th><th>Action</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  } catch(e) {
+    document.getElementById('vendorsTableWrap').innerHTML = `<div class="empty-state"><strong style="color:var(--danger)">Error: ${e.message}</strong></div>`;
+    console.error(e);
+  }
+}
+
+async function setVendorStatus(vendorId, verified) {
+  try {
+    await db.collection('vendors').doc(vendorId).update({ verified, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    loadVendors();
+  } catch(e) { alert('Error: ' + e.message); }
 }
 
 async function loadDashboard() {

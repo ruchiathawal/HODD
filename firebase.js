@@ -528,6 +528,76 @@ async function fbAdminGetStats() {
   };
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   VENDOR SYSTEM
+═══════════════════════════════════════════════════════════════ */
+
+// Get verified vendors for a city + category (called by renderBOQ)
+async function fbGetVendors(city, category) {
+  if (!db || !city) return [];
+  try {
+    const snap = await db.collection('vendors')
+      .where('verified', '==', true)
+      .where('cities', 'array-contains', city.toLowerCase())
+      .get();
+    return snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(v => v.categories?.includes(category));
+  } catch(e) {
+    console.warn('fbGetVendors error', e);
+    return [];
+  }
+}
+
+// Track a vendor click (commission evidence)
+async function fbTrackVendorClick(vendorId, vendorName, city, category, type) {
+  if (!db) return;
+  try {
+    const batch = db.batch();
+    // Log individual click
+    const clickRef = db.collection('vendor_clicks').doc();
+    batch.set(clickRef, {
+      vendorId, vendorName, city, category, type,
+      userId: currentUser?.uid || null,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    // Increment vendor click counter
+    const vendorRef = db.collection('vendors').doc(vendorId);
+    batch.update(vendorRef, { clicks: firebase.firestore.FieldValue.increment(1) });
+    await batch.commit();
+  } catch(e) {
+    console.warn('fbTrackVendorClick error', e);
+  }
+}
+
+// Admin: get all vendors (verified + pending)
+async function fbAdminGetVendors() {
+  if (!db) return [];
+  const snap = await db.collection('vendors').orderBy('createdAt', 'desc').get();
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+// Admin: verify or reject vendor
+async function fbAdminSetVendorStatus(vendorId, verified) {
+  if (!db) return;
+  await db.collection('vendors').doc(vendorId).update({ verified, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+}
+
+// Admin: get click stats for all vendors
+async function fbAdminGetClickStats() {
+  if (!db) return {};
+  const snap = await db.collection('vendor_clicks').get();
+  const stats = {};
+  snap.docs.forEach(d => {
+    const { vendorId, type } = d.data();
+    if (!stats[vendorId]) stats[vendorId] = { total: 0, whatsapp: 0, catalog: 0 };
+    stats[vendorId].total++;
+    if (type === 'whatsapp') stats[vendorId].whatsapp++;
+    else stats[vendorId].catalog++;
+  });
+  return stats;
+}
+
 /* ── Init on load ────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
   initFirebase();
