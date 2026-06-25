@@ -1594,10 +1594,23 @@ function resizeImageForAI(dataUrl, maxSize = 512) {
 }
 
 async function startPrediction(styleKey, roomType, variationIndex, customPrompt) {
-  // Resize uploaded photo for ControlNet (frame-preserved) if available
-  let imageBase64 = null;
+  // Upload room photo first to get a stable URL for img2img frame preservation
+  let imageUrl = null;
   if (state.referencePhoto) {
-    imageBase64 = await resizeImageForAI(state.referencePhoto, 768);
+    try {
+      const imageBase64 = await resizeImageForAI(state.referencePhoto, 768);
+      const upRes = await fetch('/.netlify/functions/upload-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64 }),
+      });
+      if (upRes.ok) {
+        const upData = await upRes.json();
+        imageUrl = upData.url || null;
+      }
+    } catch (e) {
+      console.warn('Image upload failed, falling back to text-to-image:', e.message);
+    }
   }
 
   const res = await fetch('/.netlify/functions/render-start', {
@@ -1605,7 +1618,7 @@ async function startPrediction(styleKey, roomType, variationIndex, customPrompt)
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       styleKey, roomType, variationIndex: variationIndex ?? 0, customPrompt,
-      imageBase64,
+      imageUrl,
       dims: state.dims,
       furniture: { existing: state.furniture.existing, wanted: state.furniture.wanted },
       constraints: [...state.constraints],
@@ -1616,7 +1629,7 @@ async function startPrediction(styleKey, roomType, variationIndex, customPrompt)
   if (!res.ok) throw new Error(`render-start failed: ${res.status}`);
   const data = await res.json();
   if (data.error) throw new Error(data.error);
-  return data; // { id, status, output? }
+  return data;
 }
 
 async function pollPrediction(id, onUpdate, maxWait = 240000) {

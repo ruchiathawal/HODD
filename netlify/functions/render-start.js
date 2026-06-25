@@ -96,7 +96,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { styleKey, roomType, variationIndex = 0, customPrompt, imageBase64, dims, furniture, constraints, city, vastuDoorDir } = JSON.parse(event.body);
+    const { styleKey, roomType, variationIndex = 0, customPrompt, imageBase64, imageUrl, dims, furniture, constraints, city, vastuDoorDir } = JSON.parse(event.body);
 
     let fullPrompt;
     if (customPrompt) {
@@ -126,24 +126,49 @@ exports.handler = async (event) => {
       fullPrompt = `${roomPrefix} ${basePrompt}${roomContext} ${REALISM_SUFFIX}`;
     }
 
-    // ── FLUX-schnell: fast, reliable for all renders ──
-    const response = await fetch(
-      'https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions',
-      {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          input: {
-            prompt: fullPrompt,
-            num_inference_steps: 4,
-            width: 1024,
-            height: 768,
-            output_format: 'webp',
-            output_quality: 90,
-          },
-        }),
-      }
-    );
+    let response;
+
+    if (imageUrl) {
+      // ── Frame-preserved: SDXL img2img using pre-uploaded image URL ──
+      response = await fetch(
+        'https://api.replicate.com/v1/models/stability-ai/sdxl/predictions',
+        {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            input: {
+              image: imageUrl,
+              prompt: fullPrompt,
+              negative_prompt: NEGATIVE_PROMPT,
+              image_strength: 0.35,
+              num_inference_steps: 30,
+              guidance_scale: 8,
+              width: 1024,
+              height: 768,
+            },
+          }),
+        }
+      );
+    } else {
+      // ── FLUX-schnell: text-to-image (no photo uploaded) ──
+      response = await fetch(
+        'https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions',
+        {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            input: {
+              prompt: fullPrompt,
+              num_inference_steps: 4,
+              width: 1024,
+              height: 768,
+              output_format: 'webp',
+              output_quality: 90,
+            },
+          }),
+        }
+      );
+    }
 
     if (!response.ok) {
       const err = await response.text();
