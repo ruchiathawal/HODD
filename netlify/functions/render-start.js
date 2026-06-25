@@ -136,7 +136,6 @@ exports.handler = async (event) => {
         headers: {
           'Authorization': `Bearer ${apiToken}`,
           'Content-Type': 'application/json',
-          'Prefer': 'wait=25',
         },
         body: JSON.stringify({
           input: {
