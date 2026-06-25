@@ -95,12 +95,12 @@ exports.handler = async function(event) {
     var roomType = body.roomType;
     var variationIndex = body.variationIndex || 0;
     var customPrompt = body.customPrompt;
-    var imageUrl = body.imageUrl;
     var dims = body.dims;
     var furniture = body.furniture;
     var constraints = body.constraints;
     var city = body.city;
     var vastuDoorDir = body.vastuDoorDir;
+    var promptOnly = body.promptOnly;
 
     var fullPrompt;
     if (customPrompt) {
@@ -123,6 +123,10 @@ exports.handler = async function(event) {
       var roomContext = parts.length ? ', ' + parts.join(', ') + ',' : ',';
 
       fullPrompt = roomPrefix + ' ' + basePrompt + roomContext + ' ' + REALISM_SUFFIX;
+    }
+
+    if (promptOnly) {
+      return { statusCode: 200, headers: headers, body: JSON.stringify({ prompt: fullPrompt }) };
     }
 
     var response;

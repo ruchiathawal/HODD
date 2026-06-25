@@ -1594,6 +1594,45 @@ function resizeImageForAI(dataUrl, maxSize = 512) {
 }
 
 async function startPrediction(styleKey, roomType, variationIndex, customPrompt) {
+  // Build the prompt first via render-start (text-to-image path gives us the prediction)
+  // If user uploaded a room photo, try frame-preserved render instead
+  if (state.referencePhoto) {
+    try {
+      const imageBase64 = await resizeImageForAI(state.referencePhoto, 768);
+      // Get the styled prompt from render-start (text path), then use it for img2img
+      const promptRes = await fetch('/.netlify/functions/render-start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          styleKey, roomType, variationIndex: variationIndex ?? 0, customPrompt,
+          dims: state.dims,
+          furniture: { existing: state.furniture.existing, wanted: state.furniture.wanted },
+          constraints: [...state.constraints],
+          city: state.city,
+          vastuDoorDir: state.vastuDoorDir,
+          promptOnly: true,
+        }),
+      });
+      if (promptRes.ok) {
+        const { prompt } = await promptRes.json();
+        if (prompt) {
+          const frameRes = await fetch('/.netlify/functions/render-frame', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imageBase64, prompt }),
+          });
+          if (frameRes.ok) {
+            const frameData = await frameRes.json();
+            if (frameData.id && !frameData.error) return frameData;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Frame render failed, falling back:', e.message);
+    }
+  }
+
+  // Default: FLUX text-to-image
   const res = await fetch('/.netlify/functions/render-start', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
