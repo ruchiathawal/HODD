@@ -32,7 +32,7 @@ function initFirebase() {
   if (firebase.apps.length === 0) firebase.initializeApp(firebaseConfig);
   db = firebase.firestore();
   // Force long-polling instead of WebSockets (fixes connection issues on some networks)
-  db.settings({ experimentalForceLongPolling: true, merge: true });
+  db.settings({ experimentalAutoDetectLongPolling: true, merge: true });
   auth     = firebase.auth();
   googleProvider = new firebase.auth.GoogleAuthProvider();
 
