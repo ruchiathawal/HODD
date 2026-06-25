@@ -96,7 +96,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { styleKey, roomType, variationIndex = 0, customPrompt, imageBase64, imageUrl, dims, furniture, constraints, city, vastuDoorDir } = JSON.parse(event.body);
+    const { styleKey, roomType, variationIndex = 0, customPrompt, imageUrl, dims, furniture, constraints, city, vastuDoorDir } = JSON.parse(event.body);
 
     let fullPrompt;
     if (customPrompt) {
