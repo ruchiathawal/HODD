@@ -126,79 +126,24 @@ exports.handler = async (event) => {
       fullPrompt = `${roomPrefix} ${basePrompt}${roomContext} ${REALISM_SUFFIX}`;
     }
 
-    let response;
-
-    if (imageBase64) {
-      // ── Frame-preserved render: upload image → get URL → SDXL img2img ──
-      // Step 1: upload base64 image to Replicate files API to get a proper URL
-      const base64Data = imageBase64.includes(',') ? imageBase64.split(',')[1] : imageBase64;
-      const mimeType   = imageBase64.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
-      const binary     = Buffer.from(base64Data, 'base64');
-      const formData   = new FormData();
-      formData.append('content', new Blob([binary], { type: mimeType }), 'room.jpg');
-
-      const uploadRes = await fetch('https://api.replicate.com/v1/files', {
+    // ── FLUX-schnell: fast, reliable for all renders ──
+    const response = await fetch(
+      'https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions',
+      {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${apiToken}` },
-        body: formData,
-      });
-
-      if (!uploadRes.ok) {
-        const err = await uploadRes.text();
-        console.error('Replicate file upload failed:', err);
-        // Fall through to text-to-image if upload fails
-        response = null;
-      } else {
-        const fileData = await uploadRes.json();
-        const imageUrl = fileData.urls?.get;
-
-        if (!imageUrl) {
-          response = null;
-        } else {
-          // Step 2: use URL with SDXL img2img
-          response = await fetch(
-            'https://api.replicate.com/v1/models/stability-ai/sdxl/predictions',
-            {
-              method: 'POST',
-              headers: { 'Authorization': `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                input: {
-                  image: imageUrl,
-                  prompt: fullPrompt,
-                  negative_prompt: NEGATIVE_PROMPT,
-                  image_strength: 0.35,
-                  num_inference_steps: 30,
-                  guidance_scale: 8,
-                  width: 1024,
-                  height: 768,
-                },
-              }),
-            }
-          );
-        }
+        headers: { 'Authorization': `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          input: {
+            prompt: fullPrompt,
+            num_inference_steps: 4,
+            width: 1024,
+            height: 768,
+            output_format: 'webp',
+            output_quality: 90,
+          },
+        }),
       }
-    }
-
-    // ── Fallback / no-photo: FLUX-schnell text-to-image ──
-    if (!imageBase64 || !response) {
-      response = await fetch(
-        'https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions',
-        {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            input: {
-              prompt: fullPrompt,
-              num_inference_steps: 4,
-              width: 1024,
-              height: 768,
-              output_format: 'webp',
-              output_quality: 90,
-            },
-          }),
-        }
-      );
-    }
+    );
 
     if (!response.ok) {
       const err = await response.text();
