@@ -128,52 +128,28 @@ exports.handler = async (event) => {
 
     let response;
 
-    if (imageBase64) {
-      // ── Frame-preserved render (user uploaded their room photo) ──
-      // stability-ai/sdxl img2img — reskins the actual room, reliable first-party model
-      response = await fetch(
-        'https://api.replicate.com/v1/models/stability-ai/sdxl/predictions',
-        {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            input: {
-              image: imageBase64,
-              prompt: fullPrompt,
-              negative_prompt: NEGATIVE_PROMPT,
-              image_strength: 0.35,
-              num_inference_steps: 30,
-              guidance_scale: 8,
-              width: 1024,
-              height: 768,
-            },
-          }),
-        }
-      );
-    } else {
-      // ── Text-to-image render (no photo — FLUX-schnell, fast) ──
-      response = await fetch(
-        'https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions',
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${apiToken}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'wait=25',
+    // ── FLUX-schnell: fast, reliable for all renders ──
+    response = await fetch(
+      'https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiToken}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'wait=25',
+        },
+        body: JSON.stringify({
+          input: {
+            prompt: fullPrompt,
+            num_inference_steps: 4,
+            width: 1024,
+            height: 768,
+            output_format: 'webp',
+            output_quality: 90,
           },
-          body: JSON.stringify({
-            input: {
-              prompt: fullPrompt,
-              num_inference_steps: 4,
-              width: 1024,
-              height: 768,
-              output_format: 'webp',
-              output_quality: 90,
-            },
-          }),
-        }
-      );
-    }
+        }),
+      }
+    );
 
     if (!response.ok) {
       const err = await response.text();
