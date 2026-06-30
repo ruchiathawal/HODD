@@ -1912,7 +1912,7 @@ let _p2ActiveImgSlot = 'a'; // crossfade between two img elements
 function p2SetPreview(d, lock = false) {
   if (!d) return;
   const theme = STYLE_THEMES[d.styleKey] || STYLE_THEMES['japandi'];
-  const imgSrc = theme.roomImages?.[state.room] || d.img || theme.img || '';
+  const imgSrc = aiRenders[d.id]?.url || theme.roomImages?.[state.room] || d.img || theme.img || '';
   const palette = theme.palette || [];
 
   // Crossfade image
