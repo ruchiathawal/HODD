@@ -1695,13 +1695,11 @@ async function renderOneDesign(designId) {
 async function startAIRenders() {
   const rankedDesigns = getAIRecommendedDesigns();
 
-  // Show "Generate AI" buttons on cards 2-5 so user can trigger on demand
-  rankedDesigns.forEach((d, i) => {
-    if (i > 0) updateCardRenderState(d.id, 'idle', null);
-  });
-
-  // Only auto-render the top pick — fastest perceived experience
-  renderOneDesign(rankedDesigns[0].id);
+  // Render all designs sequentially with a small stagger to avoid 429 rate limits
+  for (let i = 0; i < rankedDesigns.length; i++) {
+    if (i > 0) await new Promise(r => setTimeout(r, 3000)); // 3s gap between renders
+    renderOneDesign(rankedDesigns[i].id);
+  }
 }
 
 function updateCardRenderState(designId, status, url, label) {
