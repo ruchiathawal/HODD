@@ -1594,11 +1594,30 @@ function resizeImageForAI(dataUrl, maxSize = 512) {
 }
 
 async function startPrediction(styleKey, roomType, variationIndex, customPrompt) {
+  let imageUrl = null;
+  if (state.referencePhoto) {
+    try {
+      const imageBase64 = await resizeImageForAI(state.referencePhoto, 768);
+      const upRes = await fetch('/.netlify/functions/upload-room', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64 }),
+      });
+      if (upRes.ok) {
+        const upData = await upRes.json();
+        imageUrl = upData.url || null;
+      }
+    } catch (e) {
+      console.warn('Room upload failed, using text-to-image:', e.message);
+    }
+  }
+
   const res = await fetch('/.netlify/functions/render-start', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       styleKey, roomType, variationIndex: variationIndex ?? 0, customPrompt,
+      imageUrl,
       dims: state.dims,
       furniture: { existing: state.furniture.existing, wanted: state.furniture.wanted },
       constraints: [...state.constraints],
