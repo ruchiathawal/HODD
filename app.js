@@ -1598,15 +1598,7 @@ async function startPrediction(styleKey, roomType, variationIndex, customPrompt)
   if (state.referencePhoto) {
     try {
       const imageBase64 = await resizeImageForAI(state.referencePhoto, 768);
-      const upRes = await fetch('/.netlify/functions/upload-room', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64 }),
-      });
-      if (upRes.ok) {
-        const upData = await upRes.json();
-        imageUrl = upData.url || null;
-      }
+      imageUrl = await uploadRoomPhoto(imageBase64);
     } catch (e) {
       console.warn('Room upload failed, using text-to-image:', e.message);
     }

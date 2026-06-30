@@ -598,6 +598,17 @@ async function fbAdminGetClickStats() {
   return stats;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   STORAGE — room photo upload for img2img renders
+═══════════════════════════════════════════════════════════════ */
+async function uploadRoomPhoto(imageBase64) {
+  const storage = firebase.storage();
+  const base64Data = imageBase64.includes(',') ? imageBase64.split(',')[1] : imageBase64;
+  const ref = storage.ref('room-photos/' + Date.now() + '.jpg');
+  await ref.putString(base64Data, 'base64', { contentType: 'image/jpeg' });
+  return ref.getDownloadURL();
+}
+
 /* ── Init on load ────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
   initFirebase();
