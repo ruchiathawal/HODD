@@ -3399,7 +3399,23 @@ function resumeSession() {
   document.getElementById('resumeBanner')?.remove();
   renderStyleCards();
   showScreen('wizard');
-  showPhase(state.phase || 1);
+  const phase = state.phase || 1;
+  if (phase === 1) {
+    showPhase(1);
+  } else if (phase === 2) {
+    goPhase2();
+  } else if (phase === 3) {
+    goPhase2(); // rebuild DESIGNS first
+    if (state.selectedDesign) goPhase3();
+  } else if (phase === 4) {
+    goPhase2();
+    if (state.selectedDesign) { goPhase3(); goPhase4(); }
+  } else if (phase === 5) {
+    goPhase2();
+    if (state.selectedDesign) { goPhase3(); goPhase4(); goPhase5(); }
+  } else {
+    showPhase(phase);
+  }
 }
 
 function clearSession() {
