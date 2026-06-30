@@ -3238,6 +3238,7 @@ function loadFromStorage() {
       rug: saved.rug ?? state.rug,
       decor: saved.decor ?? state.decor,
       cart: saved.cart ?? state.cart,
+      phase: saved.phase ?? state.phase,
     });
     return saved.savedAt ? saved.savedAt : true;
   } catch(e) { return false; }
