@@ -90,6 +90,7 @@ exports.handler = async function(event) {
   if (!apiToken) return { statusCode: 500, headers: headers, body: JSON.stringify({ error: 'API token not configured' }) };
 
   try {
+    if (!event.body) return { statusCode: 400, headers: headers, body: JSON.stringify({ error: 'Empty request body' }) };
     var body = JSON.parse(event.body);
     var styleKey = body.styleKey;
     var roomType = body.roomType;
@@ -163,7 +164,7 @@ exports.handler = async function(event) {
     return { statusCode: 200, headers: headers, body: JSON.stringify({ id: prediction.id, status: prediction.status }) };
 
   } catch (err) {
-    console.error('render-start error:', err);
-    return { statusCode: 500, headers: headers, body: JSON.stringify({ error: err.message }) };
+    console.error('render-start error:', err.message, err.stack);
+    return { statusCode: 500, headers: headers, body: JSON.stringify({ error: err.message, stack: err.stack }) };
   }
 };
