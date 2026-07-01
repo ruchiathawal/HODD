@@ -2032,7 +2032,17 @@ function updateCompareBtn() {
 
 function selectDesign(id) {
   state.selectedDesign = DESIGNS.find(d => d.id === id);
-  renderDesignCards();
+  // Update active card highlight without rebuilding all cards (which would wipe renders)
+  document.querySelectorAll('.design-card-compact').forEach(c => {
+    c.classList.toggle('dcc-active', parseInt(c.dataset.designId) === id);
+  });
+  const btn = document.getElementById('p2ConfirmBtn');
+  if (btn) {
+    btn.textContent = `Select "${state.selectedDesign?.name}" →`;
+    btn.dataset.pendingId = id;
+    btn.classList.remove('locked');
+  }
+  autosave();
 }
 
 function toggleCompare() {
