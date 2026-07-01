@@ -1694,11 +1694,9 @@ async function renderOneDesign(designId) {
 
 async function startAIRenders() {
   const rankedDesigns = getAIRecommendedDesigns();
-
-  // Render all designs sequentially with a small stagger to avoid 429 rate limits
-  for (let i = 0; i < rankedDesigns.length; i++) {
-    if (i > 0) await new Promise(r => setTimeout(r, 3000)); // 3s gap between renders
-    renderOneDesign(rankedDesigns[i].id);
+  // Await each render fully before starting the next — avoids 429 rate limits
+  for (const d of rankedDesigns) {
+    await renderOneDesign(d.id);
   }
 }
 
@@ -1863,7 +1861,7 @@ function renderDesignCards() {
     const isCompared = state.compareDesigns.has(d.id);
     const isSelected = state.selectedDesign?.id === d.id || (i === 0 && !state.selectedDesign);
     const theme = STYLE_THEMES[d.styleKey] || STYLE_THEMES['japandi'];
-    const imgSrc = theme.roomImages?.[state.room] || d.img || theme.img || '';
+    const imgSrc = aiRenders[d.id]?.url || theme.roomImages?.[state.room] || d.img || theme.img || '';
 
     // Palette
     const palette = theme.palette || ['#d4c5b0','#8b7d6b','#5a4e3f','#2d2820'];
@@ -2006,8 +2004,11 @@ function confirmDesignAndNext() {
 function toggleFav(id) {
   state.favDesigns.has(id) ? state.favDesigns.delete(id) : state.favDesigns.add(id);
   document.getElementById('favCount').textContent = `${state.favDesigns.size} saved`;
-  renderDesignCards();
-  // Persist favourite to Firestore
+  // Toggle class directly — don't rebuild cards (would wipe renders)
+  const card = document.querySelector(`.design-card-compact[data-design-id="${id}"]`);
+  card?.classList.toggle('favourited', state.favDesigns.has(id));
+  const btn = card?.querySelector('.fav-btn');
+  btn?.classList.toggle('active', state.favDesigns.has(id));
   const design = DESIGNS.find(d => d.id === id);
   if (design && typeof fbSaveDesign === 'function') {
     fbSaveDesign(design, state.favDesigns.has(id)).catch(() => {});
@@ -2018,7 +2019,11 @@ function toggleFav(id) {
 function toggleCompareItem(id) {
   if (state.compareDesigns.has(id)) { state.compareDesigns.delete(id); }
   else if (state.compareDesigns.size < 3) { state.compareDesigns.add(id); }
-  renderDesignCards();
+  // Toggle class directly — don't rebuild cards (would wipe renders)
+  document.querySelectorAll('.design-card-compact').forEach(c => {
+    const cid = parseInt(c.dataset.designId);
+    c.classList.toggle('compared', state.compareDesigns.has(cid));
+  });
   updateCompareBtn();
 }
 
