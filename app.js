@@ -1685,9 +1685,9 @@ async function startAIRenders() {
   // Clear stale render state from any previous session
   Object.keys(aiRenders).forEach(k => delete aiRenders[k]);
   const rankedDesigns = getAIRecommendedDesigns();
-  for (const d of rankedDesigns) {
-    await renderOneDesign(d.id);
-  }
+  // Auto-render top pick; show on-demand buttons for the rest to avoid 429
+  renderOneDesign(rankedDesigns[0].id);
+  rankedDesigns.slice(1).forEach(d => updateCardRenderState(d.id, 'idle', null));
 }
 
 function updateCardRenderState(designId, status, url, label) {
