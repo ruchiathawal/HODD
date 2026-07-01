@@ -2180,7 +2180,7 @@ function renderDecisionPreview() {
   const d = state.selectedDesign;
   if (!d) return;
   const theme = STYLE_THEMES[d.styleKey] || STYLE_THEMES['japandi'];
-  const imgSrc = theme.roomImages?.[state.room] || d.img || theme.img || '';
+  const imgSrc = aiRenders[d.id]?.url || theme.roomImages?.[state.room] || d.img || theme.img || '';
 
   const img = document.getElementById('p3RoomImg');
   if (img) { img.src = imgSrc; img.alt = d.name; }
