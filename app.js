@@ -2206,14 +2206,15 @@ function updateP3WallOverlay() {
   const g = parseInt(hex.substr(2,2),16);
   const b = parseInt(hex.substr(4,2),16);
 
-  // Strong gradient: top 40% of image = wall area → heavily tinted
+  // mix-blend-mode:color is on the overlay div, so use full-opacity colour stops
+  // Top 65% = wall area (ceiling + walls), fades into furniture zone
   overlay.style.background = `linear-gradient(to bottom,
-    rgba(${r},${g},${b},0.72) 0%,
-    rgba(${r},${g},${b},0.45) 30%,
-    rgba(${r},${g},${b},0.08) 55%,
-    transparent 70%)`;
+    rgb(${r},${g},${b}) 0%,
+    rgb(${r},${g},${b}) 40%,
+    rgba(${r},${g},${b},0.55) 60%,
+    transparent 75%)`;
 
-  // Reset frame border (no longer driven by wall colour)
+  // Keep frame border neutral
   if (frame) frame.style.borderColor = '';
 }
 
@@ -2688,27 +2689,29 @@ function setWallFinish(finish, btn) {
 }
 
 const FLOOR_TINTS = {
-  'teak-hardwood':    [160,110,60,.22],  'oak-hardwood':    [200,165,110,.2],
-  'walnut-hardwood':  [100,70,40,.25],   'bamboo':          [190,175,120,.2],
-  'reclaimed-wood':   [130,95,65,.22],   'engineered-wood': [170,130,90,.2],
-  'italian-marble':   [240,238,232,.2],  'calacatta-marble':[235,230,220,.2],
-  'black-marble':     [30,30,30,.28],    'vitrified-large': [210,210,215,.18],
-  'vitrified-wood':   [165,128,85,.2],   'terracotta-tile': [190,100,65,.25],
-  'kota-stone':       [150,140,120,.22], 'slate':           [80,85,90,.28],
-  'cement-tile':      [160,160,155,.22], 'carpet-wool':     [180,160,130,.22],
-  'carpet-sisal':     [195,180,145,.2],  'polished-concrete':[140,140,140,.2],
-  'laminate-12mm':    [170,135,100,.2],  'vinyl-plank':     [155,125,90,.2],
+  'teak-hardwood':    [160,110,60],   'oak-hardwood':     [200,165,110],
+  'walnut-hardwood':  [100,70,40],    'bamboo':           [190,175,120],
+  'reclaimed-wood':   [130,95,65],    'engineered-wood':  [170,130,90],
+  'italian-marble':   [240,238,232],  'calacatta-marble': [235,230,220],
+  'black-marble':     [55,50,50],     'vitrified-large':  [210,210,215],
+  'vitrified-wood':   [165,128,85],   'terracotta-tile':  [190,100,65],
+  'kota-stone':       [150,140,120],  'slate':            [80,85,90],
+  'cement-tile':      [160,160,155],  'carpet-wool':      [180,160,130],
+  'carpet-sisal':     [195,180,145],  'polished-concrete':[140,140,140],
+  'laminate-12mm':    [170,135,100],  'vinyl-plank':      [155,125,90],
 };
 function updateP3FloorOverlay() {
   const overlay = document.getElementById('p3FloorOverlay');
   if (!overlay) return;
   const t = FLOOR_TINTS[state.floor];
   if (!t) { overlay.style.background = 'transparent'; return; }
-  const [r,g,b,a] = t;
+  const [r,g,b] = t;
+  // mix-blend-mode:multiply — use full-opacity colour, blend mode handles tinting
   overlay.style.background = `linear-gradient(to top,
-    rgba(${r},${g},${b},${a}) 0%,
-    rgba(${r},${g},${b},${a*0.6}) 18%,
-    transparent 38%)`;
+    rgb(${r},${g},${b}) 0%,
+    rgb(${r},${g},${b}) 22%,
+    rgba(${r},${g},${b},0.5) 40%,
+    transparent 58%)`;
 }
 
 function setFloor(type, btn) {

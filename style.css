@@ -888,7 +888,6 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); background-image
   position: relative; border-radius: 18px; overflow: visible;
   background: var(--surface2); aspect-ratio: 4/3;
   border: 8px solid #F5F0E8;
-  transition: border-color .4s ease;
   box-shadow: 0 4px 32px rgba(0,0,0,.12);
 }
 .p3-img-frame > img {
@@ -900,12 +899,16 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); background-image
   position: absolute; inset: 0; pointer-events: none;
   border-radius: 11px;
   transition: background .4s ease;
+  mix-blend-mode: color;
+  opacity: .75;
 }
 /* Floor colour tint overlay (bottom portion of image) */
 .p3-floor-overlay {
   position: absolute; inset: 0; pointer-events: none;
   border-radius: 11px;
   transition: background .4s ease;
+  mix-blend-mode: multiply;
+  opacity: .7;
 }
 /* Lighting mood overlay */
 .p3-lighting-overlay {
