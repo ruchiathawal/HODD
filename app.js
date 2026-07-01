@@ -1594,22 +1594,11 @@ function resizeImageForAI(dataUrl, maxSize = 512) {
 }
 
 async function startPrediction(styleKey, roomType, variationIndex, customPrompt) {
-  let imageUrl = null;
-  if (state.referencePhoto) {
-    try {
-      const imageBase64 = await resizeImageForAI(state.referencePhoto, 768);
-      imageUrl = await uploadRoomPhoto(imageBase64);
-    } catch (e) {
-      console.warn('Room upload failed, using text-to-image:', e.message);
-    }
-  }
-
   const res = await fetch('/.netlify/functions/render-start', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       styleKey, roomType, variationIndex: variationIndex ?? 0, customPrompt,
-      imageUrl,
       dims: state.dims,
       furniture: { existing: state.furniture.existing, wanted: state.furniture.wanted },
       constraints: [...state.constraints],
@@ -1693,8 +1682,9 @@ async function renderOneDesign(designId) {
 }
 
 async function startAIRenders() {
+  // Clear stale render state from any previous session
+  Object.keys(aiRenders).forEach(k => delete aiRenders[k]);
   const rankedDesigns = getAIRecommendedDesigns();
-  // Await each render fully before starting the next — avoids 429 rate limits
   for (const d of rankedDesigns) {
     await renderOneDesign(d.id);
   }
@@ -1872,8 +1862,19 @@ function renderDesignCards() {
     card.dataset.designId = d.id;
     card.style.animationDelay = `${i * 0.06}s`;
 
-    // Hover → live preview
-    card.addEventListener('mouseenter', () => p2SetPreview(d, false));
+    // Hover → live preview (without locking pendingId)
+    card.addEventListener('mouseenter', () => {
+      const imgSrc = aiRenders[d.id]?.url || theme.roomImages?.[state.room] || d.img || theme.img || '';
+      const imgA = document.getElementById('p2ImgA');
+      const imgB = document.getElementById('p2ImgB');
+      if (imgA && imgB) {
+        const next = _p2ActiveImgSlot === 'a' ? imgB : imgA;
+        const curr = _p2ActiveImgSlot === 'a' ? imgA : imgB;
+        next.src = imgSrc;
+        next.onload = () => { next.classList.add('active'); curr.classList.remove('active'); _p2ActiveImgSlot = _p2ActiveImgSlot === 'a' ? 'b' : 'a'; };
+        if (next.complete && next.naturalWidth) { next.classList.add('active'); curr.classList.remove('active'); _p2ActiveImgSlot = _p2ActiveImgSlot === 'a' ? 'b' : 'a'; }
+      }
+    });
 
     card.innerHTML = `
       <div class="dcc-thumb-wrap">
