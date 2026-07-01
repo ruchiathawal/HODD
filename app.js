@@ -2186,6 +2186,7 @@ function renderDecisionPreview() {
   if (img) { img.src = imgSrc; img.alt = d.name; }
 
   updateP3WallOverlay();
+  updateP3FloorOverlay();
   updateP3LightingOverlay();
   updateP3DesignBoard();
   renderBOQ();
@@ -2212,8 +2213,8 @@ function updateP3WallOverlay() {
     rgba(${r},${g},${b},0.08) 55%,
     transparent 70%)`;
 
-  // Also paint the frame border the wall colour so user clearly sees the choice
-  if (frame) frame.style.borderColor = c;
+  // Reset frame border (no longer driven by wall colour)
+  if (frame) frame.style.borderColor = '';
 }
 
 /* Lighting: CSS filter on the photo */
@@ -2672,7 +2673,8 @@ function updateCommitCard() {
 }
 
 function setWall(color, el) {
-  document.querySelectorAll('#wallSwatches .color-sw').forEach(s => s.classList.remove('selected'));
+  const section = el?.closest('.p3-section');
+  (section || document).querySelectorAll('.color-sw').forEach(s => s.classList.remove('selected'));
   if (el) el.classList.add('selected');
   state.wallColor = color;
   updateP3WallOverlay();
@@ -2685,9 +2687,34 @@ function setWallFinish(finish, btn) {
   updateP3DesignBoard();
 }
 
+const FLOOR_TINTS = {
+  'teak-hardwood':    [160,110,60,.22],  'oak-hardwood':    [200,165,110,.2],
+  'walnut-hardwood':  [100,70,40,.25],   'bamboo':          [190,175,120,.2],
+  'reclaimed-wood':   [130,95,65,.22],   'engineered-wood': [170,130,90,.2],
+  'italian-marble':   [240,238,232,.2],  'calacatta-marble':[235,230,220,.2],
+  'black-marble':     [30,30,30,.28],    'vitrified-large': [210,210,215,.18],
+  'vitrified-wood':   [165,128,85,.2],   'terracotta-tile': [190,100,65,.25],
+  'kota-stone':       [150,140,120,.22], 'slate':           [80,85,90,.28],
+  'cement-tile':      [160,160,155,.22], 'carpet-wool':     [180,160,130,.22],
+  'carpet-sisal':     [195,180,145,.2],  'polished-concrete':[140,140,140,.2],
+  'laminate-12mm':    [170,135,100,.2],  'vinyl-plank':     [155,125,90,.2],
+};
+function updateP3FloorOverlay() {
+  const overlay = document.getElementById('p3FloorOverlay');
+  if (!overlay) return;
+  const t = FLOOR_TINTS[state.floor];
+  if (!t) { overlay.style.background = 'transparent'; return; }
+  const [r,g,b,a] = t;
+  overlay.style.background = `linear-gradient(to top,
+    rgba(${r},${g},${b},${a}) 0%,
+    rgba(${r},${g},${b},${a*0.6}) 18%,
+    transparent 38%)`;
+}
+
 function setFloor(type, btn) {
-  if (btn) { btn.closest('.p3-option-chips').querySelectorAll('.p3-chip').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
+  if (btn) { btn.closest('.p3-section').querySelectorAll('.p3-chip').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
   state.floor = type;
+  updateP3FloorOverlay();
   updateP3DesignBoard();
 }
 
@@ -2900,9 +2927,9 @@ function buildFloorPlan() {
 
   /* ── Furniture zones (proportional to room) ─────────────── */
   const sofaW = Math.min(L * 0.5, 10), sofaD = Math.min(B * 0.15, 3);
-  const sofaX = (L - sofaW) / 2, sofaY = B * 0.55;
+  const sofaX = (L - sofaW) / 2, sofaY = B * 0.52;
   const tableW = sofaW * 0.55, tableD = sofaD * 0.9;
-  const tableX = (L - tableW) / 2, tableY = sofaY + sofaD + 0.8;
+  const tableX = (L - tableW) / 2, tableY = sofaY - tableD - 0.7;
   const chairW = sofaD * 1.2, chairX = sofaX + sofaW + 0.8, chairY = sofaY;
   const storageW = Math.min(L * 0.12, 2.5), storageH = B * 0.3;
 
@@ -2919,10 +2946,10 @@ function buildFloorPlan() {
     <path d="M${ox},${py(B*0.35)} Q${ox},${py(B*0.22)} ${px(L*0.12)},${py(B*0.22)}"
           fill="none" stroke="rgba(255,255,255,.2)" stroke-width="1.2" stroke-dasharray="4,3"/>
 
-    <!-- Seating zone -->
-    <rect x="${px(sofaX-0.6)}" y="${py(sofaY-0.5)}" width="${sw(sofaW+chairW+2)}" height="${sw(sofaD+tableD+2.5)}"
+    <!-- Seating zone (table above sofa, facing TV wall at top) -->
+    <rect x="${px(sofaX-0.6)}" y="${py(tableY-0.5)}" width="${sw(sofaW+chairW+2)}" height="${sw(sofaD+tableD+1.8)}"
           rx="5" fill="rgba(139,92,246,.08)" stroke="#8b5cf6" stroke-width="1" stroke-dasharray="4,3"/>
-    <text x="${px(sofaX + (sofaW+chairW)/2)}" y="${py(sofaY-0.8)}"
+    <text x="${px(sofaX + (sofaW+chairW)/2)}" y="${py(tableY-0.8)}"
           fill="#8b5cf6" font-size="7.5" text-anchor="middle" font-family="Inter" font-weight="600">SEATING ZONE</text>
 
     <!-- Sofa -->
